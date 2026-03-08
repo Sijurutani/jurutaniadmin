@@ -7,6 +7,10 @@ export default defineNuxtConfig({
     '@pinia/nuxt'
   ],
 
+  colorMode: {
+    fallback: 'light'
+  },
+
   devtools: {
     enabled: true
   },

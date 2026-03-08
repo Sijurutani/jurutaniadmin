@@ -163,7 +163,7 @@ defineExpose({ openAdd, refresh, loading })
 </script>
 
 <template>
-  <!-- Header meta info -->
+  <!-- Section meta info -->
   <div class="flex items-center gap-3 mb-5">
     <div class="flex items-center gap-2 text-sm">
       <UIcon name="i-lucide-layers" class="size-4 text-muted" />

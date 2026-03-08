@@ -1,66 +1,58 @@
 <script setup lang="ts">
-import type { NavigationMenuItem } from '@nuxt/ui'
-
 defineOptions({ inheritAttrs: false })
 
 const route = useRoute()
 const toast = useToast()
+const { inboxUnread, newsPending, marketsPending, coursesPending, fmtBadge } = useSidebarBadges()
 
 const open = ref(false)
 
-const links = [[
-  { label: 'Admin', type: 'label' },
+const links = computed(() => [[
+  { label: 'Admin', type: 'label' as const },
   { label: 'Home', icon: 'i-lucide-house', to: '/', exact: true },
-  { label: 'News', icon: 'i-lucide-newspaper', to: '/news' },
-  { label: 'Market', icon: 'i-lucide-shopping-cart', to: '/markets' },
-  { label: 'Inbox', icon: 'i-lucide-inbox', to: '/inbox', badge: '4',}, 
-  { label: 'Resources', type: 'label' },
+  { label: 'News', icon: 'i-lucide-newspaper', to: '/news', badge: fmtBadge(newsPending.value) },
+  { label: 'Market', icon: 'i-lucide-shopping-cart', to: '/markets', badge: fmtBadge(marketsPending.value) },
+  { label: 'Inbox', icon: 'i-lucide-inbox', to: '/inbox', badge: fmtBadge(inboxUnread.value) },
+  { label: 'Resources', type: 'label' as const },
   { label: 'Videos', icon: 'i-lucide-video', to: '/videos' },
   { label: 'Meeting', icon: 'i-lucide-calendar', to: '/meetings' },
-  { label: 'Courses', icon: 'i-lucide-book-open', to: '/courses' },
-  { label: 'Users Management', type: 'label' },
+  { label: 'Courses', icon: 'i-lucide-book-open', to: '/courses', badge: fmtBadge(coursesPending.value) },
+  { label: 'Users Management', type: 'label' as const },
   { label: 'Dashboard', icon: 'i-lucide-chart-spline', to: '/dashboard-user' },
   { label: 'Experts', icon: 'i-lucide-brain', to: '/experts' },
   { label: 'Instructors', icon: 'i-lucide-book-open', to: '/instructors' },
   { label: 'Users', icon: 'i-lucide-users', to: '/users' },
-  { label: 'Admin Settings', type: 'label' },
+  { label: 'Admin Settings', type: 'label' as const },
   { label: 'Contents', icon: 'i-lucide-layout-template', to: '/contents' },
   { label: 'Maps', icon: 'i-lucide-map-pin', to: '/maps' },
   { label: 'Tags', icon: 'i-lucide-tag', to: '/tags' },
-  { label: 'Customers', icon: 'i-lucide-users', to: '/customers',}, 
+  { label: 'Settings', type: 'label' as const },
   {
-  label: 'Settings',
-  to: '/settings',
-  icon: 'i-lucide-settings',
-  defaultOpen: true,
-  type: 'trigger',
-  children: [{
-    label: 'General',
+    label: 'Settings',
     to: '/settings',
-    exact: true,
-    onSelect: () => {
-      open.value = false
-    }
-  }, {
-    label: 'Members',
-    to: '/settings/members',
-    onSelect: () => {
-      open.value = false
-    }
-  }, {
-    label: 'Notifications',
-    to: '/settings/notifications',
-    onSelect: () => {
-      open.value = false
-    }
-  }, {
-    label: 'Security',
-    to: '/settings/security',
-    onSelect: () => {
-      open.value = false
-    }
-  }]
-}], [{
+    icon: 'i-lucide-settings',
+    defaultOpen: true,
+    type: 'trigger' as const,
+    children: [{
+      label: 'General',
+      to: '/settings',
+      exact: true,
+      onSelect: () => { open.value = false }
+    }, {
+      label: 'Members',
+      to: '/settings/members',
+      onSelect: () => { open.value = false }
+    }, {
+      label: 'Notifications',
+      to: '/settings/notifications',
+      onSelect: () => { open.value = false }
+    }, {
+      label: 'Security',
+      to: '/settings/security',
+      onSelect: () => { open.value = false }
+    }]
+  }
+], [{
   label: 'Feedback',
   icon: 'i-lucide-message-circle',
   to: 'https://github.com/nuxt-ui-templates/dashboard',
@@ -70,12 +62,12 @@ const links = [[
   icon: 'i-lucide-info',
   to: 'https://github.com/nuxt-ui-templates/dashboard',
   target: '_blank'
-}]] satisfies NavigationMenuItem[][]
+}]])
 
 const groups = computed(() => [{
   id: 'links',
   label: 'Go to',
-  items: links.flat()
+  items: links.value.flat()
 }, {
   id: 'code',
   label: 'Code',

@@ -8,6 +8,8 @@
 }
 
 :root {
+  color-scheme: light;
+
   --ui-radius: 6px;
 
   --vis-tooltip-padding: 0 !important;

@@ -1,50 +1,91 @@
 <script setup lang="ts">
-const state = reactive<{ [key: string]: boolean }>({
+const toast = useToast()
+
+const STORAGE_KEY = 'jurutani_notif_prefs'
+
+const defaultState: Record<string, boolean> = {
   email: true,
   desktop: false,
-  product_updates: true,
+  new_user: true,
+  new_order: true,
+  new_course_enrollment: true,
   weekly_digest: false,
   important_updates: true
-})
+}
+
+function loadState(): Record<string, boolean> {
+  if (import.meta.client) {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) return { ...defaultState, ...JSON.parse(saved) }
+    }
+    catch {}
+  }
+  return { ...defaultState }
+}
+
+const state = reactive<Record<string, boolean>>(loadState())
 
 const sections = [{
-  title: 'Notification channels',
-  description: 'Where can we notify you?',
+  title: 'Saluran notifikasi',
+  description: 'Di mana kami dapat memberitahu Anda?',
   fields: [{
     name: 'email',
     label: 'Email',
-    description: 'Receive a daily email digest.'
+    description: 'Terima ringkasan harian via email.'
   }, {
     name: 'desktop',
     label: 'Desktop',
-    description: 'Receive desktop notifications.'
+    description: 'Terima notifikasi push di browser.'
   }]
 }, {
-  title: 'Account updates',
-  description: 'Receive updates about Nuxt UI.',
+  title: 'Aktivitas sistem',
+  description: 'Notifikasi untuk aktivitas penting di platform.',
+  fields: [{
+    name: 'new_user',
+    label: 'Pengguna baru',
+    description: 'Diberi tahu saat ada pendaftaran pengguna baru.'
+  }, {
+    name: 'new_order',
+    label: 'Pesanan baru',
+    description: 'Diberi tahu saat ada transaksi/pesanan masuk.'
+  }, {
+    name: 'new_course_enrollment',
+    label: 'Enrollment kursus',
+    description: 'Diberi tahu saat ada pengguna yang mendaftar kursus.'
+  }]
+}, {
+  title: 'Update sistem',
+  description: 'Informasi terkait platform Jurutani.',
   fields: [{
     name: 'weekly_digest',
-    label: 'Weekly digest',
-    description: 'Receive a weekly digest of news.'
-  }, {
-    name: 'product_updates',
-    label: 'Product updates',
-    description: 'Receive a monthly email with all new features and updates.'
+    label: 'Ringkasan mingguan',
+    description: 'Terima ringkasan mingguan aktivitas platform.'
   }, {
     name: 'important_updates',
-    label: 'Important updates',
-    description: 'Receive emails about important updates like security fixes, maintenance, etc.'
+    label: 'Update penting',
+    description: 'Notifikasi untuk pembaruan keamanan dan maintenance.'
   }]
 }]
 
-async function onChange() {
-  // Do something with data
-  console.log(state)
+function onChange() {
+  if (import.meta.client) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+    toast.add({
+      title: 'Preferensi disimpan',
+      description: 'Pengaturan notifikasi berhasil diperbarui.',
+      icon: 'i-lucide-check',
+      color: 'success'
+    })
+  }
 }
 </script>
 
 <template>
-  <div v-for="(section, index) in sections" :key="index">
+  <div
+    v-for="(section, index) in sections"
+    :key="index"
+  >
     <UPageCard
       :title="section.title"
       :description="section.description"
@@ -52,7 +93,11 @@ async function onChange() {
       class="mb-4"
     />
 
-    <UPageCard variant="subtle" :ui="{ container: 'divide-y divide-default' }">
+    <UPageCard
+      variant="subtle"
+      :ui="{ container: 'divide-y divide-default' }"
+      class="mb-6"
+    >
       <UFormField
         v-for="field in section.fields"
         :key="field.name"

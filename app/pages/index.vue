@@ -1,69 +1,100 @@
 <script setup lang="ts">
-import { sub } from 'date-fns'
-import type { DropdownMenuItem } from '@nuxt/ui'
-import type { Period, Range } from '~/types'
-
 const { isNotificationsSlideoverOpen } = useDashboard()
+const auth = useAuth()
 
-const items = [[{
-  label: 'New mail',
-  icon: 'i-lucide-send',
-  to: '/inbox'
-}, {
-  label: 'New customer',
-  icon: 'i-lucide-user-plus',
-  to: '/customers'
-}]] satisfies DropdownMenuItem[][]
-
-const range = shallowRef<Range>({
-  start: sub(new Date(), { days: 14 }),
-  end: new Date()
+const today = new Date().toLocaleDateString('id-ID', {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric'
 })
-const period = ref<Period>('daily')
+
+const refreshKey = ref(0)
+const refreshing = ref(false)
+
+async function doRefresh() {
+  refreshing.value = true
+  refreshKey.value++
+  await nextTick()
+  setTimeout(() => { refreshing.value = false }, 500)
+}
 </script>
 
 <template>
   <UDashboardPanel id="home">
     <template #header>
-      <UDashboardNavbar title="Home" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
+          <div class="flex flex-col ml-1">
+            <h1 class="text-base font-bold text-highlighted leading-tight">
+              Halo, {{ auth.displayName }}! 👋
+            </h1>
+            <p class="text-xs text-muted">
+              {{ today }}
+            </p>
+          </div>
         </template>
 
         <template #right>
-          <UTooltip text="Notifications" :shortcuts="['N']">
+          <UTooltip text="Refresh data">
+            <UButton
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-refresh-cw"
+              square
+              :loading="refreshing"
+              @click="doRefresh"
+            />
+          </UTooltip>
+          <UTooltip
+            text="Notifikasi"
+            :shortcuts="['N']"
+          >
             <UButton
               color="neutral"
               variant="ghost"
               square
               @click="isNotificationsSlideoverOpen = true"
             >
-              <UChip color="error" inset>
-                <UIcon name="i-lucide-bell" class="size-5 shrink-0" />
+              <UChip
+                color="error"
+                inset
+              >
+                <UIcon
+                  name="i-lucide-bell"
+                  class="size-5 shrink-0"
+                />
               </UChip>
             </UButton>
           </UTooltip>
-
-          <UDropdownMenu :items="items">
-            <UButton icon="i-lucide-plus" size="md" class="rounded-full" />
-          </UDropdownMenu>
         </template>
       </UDashboardNavbar>
-
-      <UDashboardToolbar>
-        <template #left>
-          <!-- NOTE: The `-ms-1` class is used to align with the `DashboardSidebarCollapse` button here. -->
-          <HomeDateRangePicker v-model="range" class="-ms-1" />
-
-          <HomePeriodSelect v-model="period" :range="range" />
-        </template>
-      </UDashboardToolbar>
     </template>
 
     <template #body>
-      <HomeStats :period="period" :range="range" />
-      <HomeChart :period="period" :range="range" />
-      <HomeSales :period="period" :range="range" />
+      <div class="flex flex-col gap-6">
+        <!-- KPI Stats -->
+        <HomeStats :key="refreshKey" />
+
+        <!-- Chart + Pending Content -->
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <div class="xl:col-span-2">
+            <HomeChart />
+          </div>
+          <HomePendingContent :key="refreshKey" />
+        </div>
+
+        <!-- Recent Users + Recent Activity -->
+        <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+          <div class="xl:col-span-3">
+            <HomeRecentUsers :key="refreshKey" />
+          </div>
+          <div class="xl:col-span-2">
+            <HomeRecentActivity :key="refreshKey" />
+          </div>
+        </div>
+      </div>
     </template>
   </UDashboardPanel>
 </template>

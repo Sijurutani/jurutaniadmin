@@ -4,13 +4,6 @@ import { id as localeId } from 'date-fns/locale'
 import type { TableColumn } from '@nuxt/ui'
 import type { Row } from '@tanstack/table-core'
 
-interface CourseAuthor {
-  id: string
-  full_name: string | null
-  username: string | null
-  avatar_url: string | null
-}
-
 interface CourseRow {
   id: string
   title: string
@@ -22,9 +15,7 @@ interface CourseRow {
   published_at: string | null
   created_at: string
   updated_at: string
-  author: CourseAuthor | null
-  lessons: { count: number }[]
-  completions: { count: number }[]
+  author: { id: string, full_name: string | null, username: string | null, avatar_url: string | null } | null
 }
 
 const UBadge = resolveComponent('UBadge')
@@ -62,16 +53,18 @@ const page = useRouteQuery('page', 1)
 const limit = useRouteQuery('limit', 15, { resetKeys: ['page'] })
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
-const coursesQuery = computed(() => {
+const courses = ref<CourseRow[]>([])
+const coursesCount = ref(0)
+const pending = ref(false)
+
+async function fetchCourses() {
   const [field, dir] = sortValue.value.split('-') as [string, string]
   let q = supabase
     .from('learning_courses')
-    .select(`
-      id, title, slug, cover_image, category, status, author_id, published_at, created_at, updated_at,
-      author:profiles(id, full_name, username, avatar_url),
-      lessons:course_lessons(count),
-      completions:course_completions(count)
-    `, { count: 'exact' })
+    .select(
+      'id, title, slug, cover_image, category, status, author_id, published_at, created_at, updated_at, author:profiles!learning_courses_author_id_fkey(id, full_name, username, avatar_url)',
+      { count: 'exact' }
+    )
     .is('deleted_at', null)
     .order(field, { ascending: dir === 'asc' })
 
@@ -79,22 +72,20 @@ const coursesQuery = computed(() => {
   if (filterStatus.value?.length) q = q.in('status', filterStatus.value)
   if (filterCategory.value?.length) q = q.in('category', filterCategory.value)
 
-  return q
-})
+  pending.value = true
+  const { data, count, error } = await q.range((page.value - 1) * limit.value, page.value * limit.value - 1)
+  pending.value = false
 
-const { data: coursesData, refresh, pending } = await useAsyncData('courses-list', async () => {
-  const { data, count, error } = await coursesQuery.value
-    .range((page.value - 1) * limit.value, page.value * limit.value - 1)
-  if (error) throw error
-  return { data: (data ?? []) as unknown as CourseRow[], count: count ?? 0 }
-}, {
-  default: () => ({ data: [] as CourseRow[], count: 0 }),
-  watch: [sortValue, page, limit]
-})
+  if (error) { toast.add({ title: 'Error', description: error.message, color: 'error' }); return }
+  courses.value = (data ?? []) as unknown as CourseRow[]
+  coursesCount.value = count ?? 0
+}
 
+onMounted(fetchCourses)
+watch([sortValue, page, limit], fetchCourses)
 watchDebounced([search, filterStatus, filterCategory], async () => {
   page.value = 1
-  await refresh()
+  await fetchCourses()
 }, { debounce: 400, deep: true })
 
 // ─── Status update ────────────────────────────────────────────────────────────
@@ -105,7 +96,7 @@ async function updateStatus(item: CourseRow, newStatus: string) {
   }
   const { error } = await supabase.from('learning_courses').update(updates).eq('id', item.id)
   if (error) { toast.add({ title: 'Error', description: error.message, color: 'error' }); return }
-  await refresh()
+  await fetchCourses()
   toast.add({ title: 'Status diperbarui', color: 'success', duration: 2000 })
 }
 
@@ -117,7 +108,7 @@ async function bulkUpdateStatus(newStatus: string) {
   if (newStatus === 'approved') updates.published_at = new Date().toISOString()
   const { error } = await supabase.from('learning_courses').update(updates).in('id', ids)
   if (error) { toast.add({ title: 'Error', description: error.message, color: 'error' }); return }
-  await refresh()
+  await fetchCourses()
   clearSelection()
   toast.add({ title: `${ids.length} course diperbarui`, color: 'success' })
 }
@@ -149,7 +140,7 @@ async function confirmPermanentDelete() {
     deleteConfirmOpen.value = false
     deleteTargetRows.value = []
     clearSelection()
-    await refresh()
+    await fetchCourses()
   } catch (err: any) {
     toast.add({ title: 'Gagal menghapus', description: err.message, color: 'error' })
   } finally {
@@ -264,22 +255,6 @@ const columns: TableColumn<CourseRow>[] = [
     }
   },
   {
-    id: 'lessons',
-    header: 'Lesson',
-    cell: ({ row }) => {
-      const count = row.original.lessons?.[0]?.count ?? 0
-      return h('span', { class: 'text-sm text-muted' }, `${count} lesson`)
-    }
-  },
-  {
-    id: 'completions',
-    header: 'Diselesaikan',
-    cell: ({ row }) => {
-      const count = row.original.completions?.[0]?.count ?? 0
-      return h('span', { class: 'text-sm text-muted' }, `${count} user`)
-    }
-  },
-  {
     id: 'author',
     header: 'Author',
     cell: ({ row }) => {
@@ -316,8 +291,6 @@ const columnLabels: Record<string, string> = {
   title: 'Judul',
   category: 'Kategori',
   status: 'Status',
-  lessons: 'Lesson',
-  completions: 'Diselesaikan',
   author: 'Author',
   created_at: 'Dibuat'
 }
@@ -407,7 +380,7 @@ const bulkStatusOptions = Enum.StatusLearning.map(s => ({
             variant="outline"
             icon="i-lucide-refresh-cw"
             :loading="pending"
-            @click="refresh()"
+            @click="fetchCourses()"
           />
         </div>
       </div>
@@ -416,7 +389,7 @@ const bulkStatusOptions = Enum.StatusLearning.map(s => ({
         ref="table"
         v-model:row-selection="rowSelection"
         v-model:column-visibility="columnVisibility"
-        :data="coursesData?.data ?? []"
+        :data="courses"
         :columns="columns"
         :loading="pending"
         :ui="{
@@ -433,8 +406,7 @@ const bulkStatusOptions = Enum.StatusLearning.map(s => ({
       <Pagination
         v-model:page="page"
         v-model:limit="limit"
-        :total="coursesData?.count ?? 0"
-        :query="coursesQuery"
+        :total="coursesCount"
         label="course"
       />
     </template>

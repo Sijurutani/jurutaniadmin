@@ -1,80 +1,120 @@
 <script setup lang="ts">
-import { eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, format } from 'date-fns'
+import { format, sub, eachDayOfInterval } from 'date-fns'
+import { id as idLocale } from 'date-fns/locale'
 import { VisXYContainer, VisLine, VisAxis, VisArea, VisCrosshair, VisTooltip } from '@unovis/vue'
-import type { Period, Range } from '~/types'
 
+const supabase = useSupabase()
 const cardRef = useTemplateRef<HTMLElement | null>('cardRef')
-
-const props = defineProps<{
-  period: Period
-  range: Range
-}>()
-
-type DataRecord = {
-  date: Date
-  amount: number
-}
-
 const { width } = useElementSize(cardRef)
 
-const data = ref<DataRecord[]>([])
+type DataRecord = { date: Date, count: number }
+type Period = '7d' | '30d' | '90d'
 
-watch([() => props.period, () => props.range], () => {
-  const dates = ({
-    daily: eachDayOfInterval,
-    weekly: eachWeekOfInterval,
-    monthly: eachMonthOfInterval
-  } as Record<Period, typeof eachDayOfInterval>)[props.period](props.range)
+const period = ref<Period>('30d')
 
-  const min = 1000
-  const max = 10000
+const periodOptions: { label: string, value: Period }[] = [
+  { label: '7 Hari', value: '7d' },
+  { label: '30 Hari', value: '30d' },
+  { label: '90 Hari', value: '90d' }
+]
 
-  data.value = dates.map(date => ({ date, amount: Math.floor(Math.random() * (max - min + 1)) + min }))
-}, { immediate: true })
+const days = computed(() => ({
+  '7d': 6,
+  '30d': 29,
+  '90d': 89
+}[period.value]))
+
+const { data: visitData, refresh } = await useAsyncData('visit-stats-chart', async () => {
+  const maxDays = 89
+  const from = format(sub(new Date(), { days: maxDays }), 'yyyy-MM-dd')
+  const { data } = await supabase
+    .from('visit_stats')
+    .select('count, date')
+    .gte('date', from)
+    .order('date', { ascending: true })
+  return data ?? []
+}, { default: () => [] })
+
+const data = computed<DataRecord[]>(() => {
+  const interval = eachDayOfInterval({ start: sub(new Date(), { days: days.value }), end: new Date() })
+  const map = new Map((visitData.value ?? []).map(r => [r.date, r.count]))
+  return interval.map(d => ({
+    date: d,
+    count: map.get(format(d, 'yyyy-MM-dd')) ?? 0
+  }))
+})
+
+const total = computed(() => data.value.reduce((acc, { count }) => acc + count, 0))
+const avg = computed(() => data.value.length ? Math.round(total.value / data.value.length) : 0)
+const peak = computed(() => Math.max(...data.value.map(d => d.count), 0))
 
 const x = (_: DataRecord, i: number) => i
-const y = (d: DataRecord) => d.amount
+const y = (d: DataRecord) => d.count
 
-const total = computed(() => data.value.reduce((acc: number, { amount }) => acc + amount, 0))
-
-const formatNumber = new Intl.NumberFormat('en', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format
-
-const formatDate = (date: Date): string => {
-  return ({
-    daily: format(date, 'd MMM'),
-    weekly: format(date, 'd MMM'),
-    monthly: format(date, 'MMM yyy')
-  })[props.period]
-}
+const tickStep = computed(() => Math.max(1, Math.floor(data.value.length / 6)))
 
 const xTicks = (i: number) => {
-  if (i === 0 || i === data.value.length - 1 || !data.value[i]) {
-    return ''
-  }
-
-  return formatDate(data.value[i].date)
+  if (!data.value[i]) return ''
+  if (i % tickStep.value !== 0 && i !== data.value.length - 1) return ''
+  return format(data.value[i]!.date, 'd MMM', { locale: idLocale })
 }
 
-const template = (d: DataRecord) => `${formatDate(d.date)}: ${formatNumber(d.amount)}`
+const template = (d: DataRecord) =>
+  `${format(d.date, 'd MMM yyyy', { locale: idLocale })}: ${d.count.toLocaleString('id-ID')} kunjungan`
 </script>
 
 <template>
-  <UCard ref="cardRef" :ui="{ root: 'overflow-visible', body: '!px-0 !pt-0 !pb-3' }">
+  <UCard
+    ref="cardRef"
+    :ui="{ root: 'overflow-visible', body: '!px-0 !pt-0 !pb-3', header: 'pb-2' }"
+  >
     <template #header>
-      <div>
-        <p class="text-xs text-muted uppercase mb-1.5">
-          Revenue
-        </p>
-        <p class="text-3xl text-highlighted font-semibold">
-          {{ formatNumber(total) }}
-        </p>
+      <div class="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <p class="text-xs text-muted uppercase mb-1">
+            Tren Kunjungan
+          </p>
+          <p class="text-3xl text-highlighted font-bold leading-none">
+            {{ total.toLocaleString('id-ID') }}
+          </p>
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="hidden sm:flex gap-4 text-center">
+            <div>
+              <p class="text-xs text-muted">
+                Rata-rata/hari
+              </p>
+              <p class="text-sm font-semibold text-highlighted">
+                {{ avg.toLocaleString('id-ID') }}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs text-muted">
+                Puncak
+              </p>
+              <p class="text-sm font-semibold text-highlighted">
+                {{ peak.toLocaleString('id-ID') }}
+              </p>
+            </div>
+          </div>
+          <UFieldGroup size="xs">
+            <UButton
+              v-for="opt in periodOptions"
+              :key="opt.value"
+              :label="opt.label"
+              :color="period === opt.value ? 'primary' : 'neutral'"
+              :variant="period === opt.value ? 'solid' : 'ghost'"
+              @click="period = opt.value"
+            />
+          </UFieldGroup>
+        </div>
       </div>
     </template>
 
     <VisXYContainer
       :data="data"
-      :padding="{ top: 40 }"
-      class="h-96"
+      :padding="{ top: 16, left: 8, right: 8 }"
+      class="h-56"
       :width="width"
     >
       <VisLine
@@ -86,20 +126,17 @@ const template = (d: DataRecord) => `${formatDate(d.date)}: ${formatNumber(d.amo
         :x="x"
         :y="y"
         color="var(--ui-primary)"
-        :opacity="0.1"
+        :opacity="0.08"
       />
-
       <VisAxis
         type="x"
         :x="x"
         :tick-format="xTicks"
       />
-
       <VisCrosshair
         color="var(--ui-primary)"
         :template="template"
       />
-
       <VisTooltip />
     </VisXYContainer>
   </UCard>
@@ -109,13 +146,12 @@ const template = (d: DataRecord) => `${formatDate(d.date)}: ${formatNumber(d.amo
 .unovis-xy-container {
   --vis-crosshair-line-stroke-color: var(--ui-primary);
   --vis-crosshair-circle-stroke-color: var(--ui-bg);
-
   --vis-axis-grid-color: var(--ui-border);
   --vis-axis-tick-color: var(--ui-border);
   --vis-axis-tick-label-color: var(--ui-text-dimmed);
-
   --vis-tooltip-background-color: var(--ui-bg);
   --vis-tooltip-border-color: var(--ui-border);
   --vis-tooltip-text-color: var(--ui-text-highlighted);
 }
 </style>
+
