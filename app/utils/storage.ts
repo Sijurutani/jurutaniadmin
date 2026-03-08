@@ -99,3 +99,48 @@ export async function deleteMarketFile(urlOrPath: string): Promise<void> {
     : urlOrPath
   await supabase.storage.from(BUCKET_MARKETS).remove([path])
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Courses Storage  (bucket: courses-images)
+//   covers  → covers/[courseId]/filename
+// ─────────────────────────────────────────────────────────────────────────────
+
+const BUCKET_COURSES = 'courses-images'
+
+export async function uploadCourseFile(
+  folder: 'covers',
+  courseId: string,
+  file: File
+): Promise<string> {
+  const supabase = getSupabaseClient()
+  const ext = file.name.split('.').pop() ?? 'bin'
+  const timestamp = Date.now()
+  const random = Math.random().toString(36).substring(2, 11)
+  const path = `${folder}/${courseId}/${timestamp}_${random}.${ext}`
+
+  const { error } = await supabase.storage
+    .from(BUCKET_COURSES)
+    .upload(path, file, { upsert: true, contentType: file.type })
+
+  if (error) throw new Error(error.message)
+
+  const { data } = supabase.storage.from(BUCKET_COURSES).getPublicUrl(path)
+  return data.publicUrl
+}
+
+export function getCoursePublicUrl(path: string | null): string | null {
+  if (!path) return null
+  if (path.startsWith('http')) return path
+  const supabase = getSupabaseClient()
+  const { data } = supabase.storage.from(BUCKET_COURSES).getPublicUrl(path)
+  return data.publicUrl
+}
+
+export async function deleteCourseFile(urlOrPath: string): Promise<void> {
+  const supabase = getSupabaseClient()
+  const storagePrefix = `/storage/v1/object/public/${BUCKET_COURSES}/`
+  const path = urlOrPath.includes(storagePrefix)
+    ? urlOrPath.split(storagePrefix)[1]!
+    : urlOrPath
+  await supabase.storage.from(BUCKET_COURSES).remove([path])
+}

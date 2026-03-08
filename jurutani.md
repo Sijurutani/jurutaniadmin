@@ -32,3 +32,6 @@ Edukasi: Akses ke kursus, program pelatihan (online & offline), berita terkini, 
 src="https://gzklfxfrislzfuqlcgtr.supabase.co/storage/v1/object/public/news-images/images/a8f2fb96-63a0-4663-bf40-10befb294972/1770955184561_img_viewer__10_.jpeg"
 src="https://gzklfxfrislzfuqlcgtr.supabase.co/storage/v1/object/public/news-images/images/a07d0cf4-2ff8-4e8d-99b7-42d257a8f5c9/1772503617213_img_viewer__17_.jpeg"
 src="https://gzklfxfrislzfuqlcgtr.supabase.co/storage/v1/object/public/news-images/images/a07d0cf4-2ff8-4e8d-99b7-42d257a8f5c9/1772503617213_img_viewer__17_.jpeg"
+
+open router = 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
+groq key = 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
