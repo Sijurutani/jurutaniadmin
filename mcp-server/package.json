@@ -1,0 +1,21 @@
+{
+  "name": "jurutani-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP Server for Jurutani Admin Dashboard - Provides context for Nuxt 4, Nuxt UI 4, Supabase, and Zod",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "keywords": [
+    "mcp",
+    "nuxt",
+    "supabase",
+    "zod",
+    "context-provider"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1"
+  }
+}

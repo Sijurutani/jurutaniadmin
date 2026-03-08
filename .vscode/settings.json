@@ -1,0 +1,38 @@
+{
+  "github.copilot.chat.codeGeneration.instructions": [
+    {
+      "file": "copilot-instructions.md"
+    }
+  ],
+  "github.copilot.chat.mcp.enabled": true,
+  "github.copilot.chat.mcp.servers": {
+    "jurutani-context": {
+      "command": "node",
+      "args": [
+        "mcp-server/index.js"
+      ],
+      "env": {
+        "NODE_ENV": "development",
+        "PROJECT_TYPE": "nuxt4-supabase"
+      }
+    }
+  },
+  "files.associations": {
+    "*.vue": "vue",
+    "*.md": "markdown"
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+  "[vue]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  }
+}

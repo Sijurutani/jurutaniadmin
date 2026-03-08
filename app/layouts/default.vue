@@ -1,34 +1,34 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 
+defineOptions({ inheritAttrs: false })
+
 const route = useRoute()
 const toast = useToast()
 
 const open = ref(false)
 
-const links = [[{
-  label: 'Home',
-  icon: 'i-lucide-house',
-  to: '/',
-  onSelect: () => {
-    open.value = false
-  }
-}, {
-  label: 'Inbox',
-  icon: 'i-lucide-inbox',
-  to: '/inbox',
-  badge: '4',
-  onSelect: () => {
-    open.value = false
-  }
-}, {
-  label: 'Customers',
-  icon: 'i-lucide-users',
-  to: '/customers',
-  onSelect: () => {
-    open.value = false
-  }
-}, {
+const links = [[
+  { label: 'Admin', type: 'label' },
+  { label: 'Home', icon: 'i-lucide-house', to: '/', exact: true },
+  { label: 'News', icon: 'i-lucide-newspaper', to: '/news' },
+  { label: 'Market', icon: 'i-lucide-shopping-cart', to: '/markets' },
+  { label: 'Inbox', icon: 'i-lucide-inbox', to: '/inbox', badge: '4',}, 
+  { label: 'Resources', type: 'label' },
+  { label: 'Videos', icon: 'i-lucide-video', to: '/videos' },
+  { label: 'Meeting', icon: 'i-lucide-calendar', to: '/meetings' },
+  { label: 'Courses', icon: 'i-lucide-book-open', to: '/courses' },
+  { label: 'Users Management', type: 'label' },
+  { label: 'Dashboard', icon: 'i-lucide-chart-spline', to: '/dashboard-user' },
+  { label: 'Experts', icon: 'i-lucide-brain', to: '/experts' },
+  { label: 'Instructors', icon: 'i-lucide-book-open', to: '/instructors' },
+  { label: 'Users', icon: 'i-lucide-users', to: '/users' },
+  { label: 'Admin Settings', type: 'label' },
+  { label: 'Contents', icon: 'i-lucide-layout-template', to: '/contents' },
+  { label: 'Maps', icon: 'i-lucide-map-pin', to: '/maps' },
+  { label: 'Tags', icon: 'i-lucide-tag', to: '/tags' },
+  { label: 'Customers', icon: 'i-lucide-users', to: '/customers',}, 
+  {
   label: 'Settings',
   to: '/settings',
   icon: 'i-lucide-settings',
@@ -146,10 +146,38 @@ onMounted(async () => {
           tooltip
           class="mt-auto"
         />
+        <div class="grow" />
+        <UPageCard
+          v-if="!collapsed"
+          title="Ask AI"
+          description="Get instant answers and insights"
+          :ui="{ description: 'text-sm', container: 'lg:p-5' }"
+          spotlight
+        >
+          <UButton
+            icon="i-lucide-bot"
+            color="primary"
+            variant="soft"
+            label="Ask Now"
+            class="w-min"
+            disabled
+          />
+        </UPageCard>
       </template>
 
       <template #footer="{ collapsed }">
-        <UserMenu :collapsed="collapsed" />
+        <ClientOnly>
+          <UserMenu :collapsed="collapsed" />
+          <template #fallback>
+            <div class="flex items-center gap-2 px-3 py-2">
+              <div class="size-8 rounded-full bg-elevated animate-pulse shrink-0" />
+              <div v-if="!collapsed" class="flex-1 space-y-1">
+                <div class="h-3 w-24 rounded bg-elevated animate-pulse" />
+                <div class="h-2.5 w-16 rounded bg-elevated animate-pulse" />
+              </div>
+            </div>
+          </template>
+        </ClientOnly>
       </template>
     </UDashboardSidebar>
 
