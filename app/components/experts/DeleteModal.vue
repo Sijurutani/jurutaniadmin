@@ -12,7 +12,7 @@ const props = defineProps<{ targets: ExpertWithProfile[] }>()
 const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{ deleted: [] }>()
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 
 const loading = ref(false)

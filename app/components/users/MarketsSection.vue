@@ -11,7 +11,7 @@ const props = defineProps<{ userId: string }>()
 const UBadge = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 
 const page = ref(1)
@@ -32,15 +32,12 @@ const { data: marketsData, refresh, pending } = await useAsyncData(`user-markets
   watch: [page]
 })
 
-const supabaseUrl = useRuntimeConfig().public.supabaseUrl
-
 function getThumb(url: string | null) {
   if (!url) return null
   if (url.startsWith('http')) return url
   try {
     return supabase.storage.from('product-markets').getPublicUrl(url).data.publicUrl
-  }
-  catch { return null }
+  } catch { return null }
 }
 
 async function softDelete(item: MarketRow) {
@@ -150,7 +147,7 @@ const totalPages = computed(() => Math.ceil((marketsData.value?.count ?? 0) / li
         thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
         tbody: '[&>tr]:last:[&>td]:border-b-0',
         th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
-        td: 'border-b border-default',
+        td: 'border-b border-default'
       }"
     />
 
@@ -158,8 +155,22 @@ const totalPages = computed(() => Math.ceil((marketsData.value?.count ?? 0) / li
       <div class="flex items-center justify-between px-2 py-1 text-xs text-muted">
         <span>Halaman {{ page }} dari {{ totalPages }}</span>
         <div class="flex gap-1">
-          <UButton :disabled="page <= 1" icon="i-lucide-chevron-left" size="xs" color="neutral" variant="ghost" @click="page--" />
-          <UButton :disabled="page >= totalPages" icon="i-lucide-chevron-right" size="xs" color="neutral" variant="ghost" @click="page++" />
+          <UButton
+            :disabled="page <= 1"
+            icon="i-lucide-chevron-left"
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            @click="page--"
+          />
+          <UButton
+            :disabled="page >= totalPages"
+            icon="i-lucide-chevron-right"
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            @click="page++"
+          />
         </div>
       </div>
     </template>

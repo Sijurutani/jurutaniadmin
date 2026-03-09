@@ -37,20 +37,16 @@ const links = computed(() => [[
     children: [{
       label: 'General',
       to: '/settings',
-      exact: true,
-      onSelect: () => { open.value = false }
+      exact: true
     }, {
       label: 'Members',
-      to: '/settings/members',
-      onSelect: () => { open.value = false }
+      to: '/settings/members'
     }, {
       label: 'Notifications',
-      to: '/settings/notifications',
-      onSelect: () => { open.value = false }
+      to: '/settings/notifications'
     }, {
       label: 'Security',
-      to: '/settings/security',
-      onSelect: () => { open.value = false }
+      to: '/settings/security'
     }]
   }
 ], [{
@@ -190,7 +186,6 @@ onMounted(async () => {
 
     <slot />
 
-    <NotificationsSlideover />
     <ChatbotPanel />
   </UDashboardGroup>
 </template>

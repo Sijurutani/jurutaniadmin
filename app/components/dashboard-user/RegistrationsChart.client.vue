@@ -17,7 +17,7 @@ const props = defineProps<{
   period: Period
 }>()
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const cardRef = useTemplateRef<HTMLElement | null>('cardRef')
 const { width } = useElementSize(cardRef)
 

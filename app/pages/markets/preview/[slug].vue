@@ -10,7 +10,7 @@ type AttachmentItem = { url: string, name: string, type: string, size: number }
 type LinkItem = { label: string, url: string }
 
 const route = useRoute()
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 const slug = route.params.slug as string
 

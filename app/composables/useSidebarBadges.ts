@@ -1,7 +1,7 @@
 import { createSharedComposable } from '@vueuse/core'
 
 const _useSidebarBadges = () => {
-  const supabase = useSupabase()
+  const supabase = useSupabaseClient()
 
   const inboxUnread = ref(0)
   const newsPending = ref(0)

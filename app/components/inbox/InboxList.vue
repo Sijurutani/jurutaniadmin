@@ -1,36 +1,46 @@
 <script setup lang="ts">
 import { format, isToday, isYesterday } from 'date-fns'
 import { id as idLocale } from 'date-fns/locale'
+import type { DropdownMenuItem } from '@nuxt/ui'
 import type { ConversationWithProfiles } from '~/pages/inbox.vue'
 
 const props = defineProps<{
   conversations: ConversationWithProfiles[]
   myId: string
   unreadCounts: Record<string, number>
+  total: number
+  loading?: boolean
+}>()
+
+const emit = defineEmits<{
+  'mark-read': [convId: string]
+  'delete-conv': [convId: string]
 }>()
 
 const selectedId = defineModel<string | null>('selectedId', { default: null })
+const filterMode = defineModel<string>('filterMode', { default: 'all' })
+const page = defineModel<number>('page', { default: 1 })
+const limit = defineModel<number>('limit', { default: 20 })
 
 const search = ref('')
-const filterMode = ref<'all' | 'unread'>('all')
 
 const totalUnread = computed(() =>
   Object.values(props.unreadCounts).reduce((a, b) => a + b, 0)
 )
 
+// Client-side search on current page data
 const filtered = computed(() => {
-  let list = props.conversations
-  if (filterMode.value === 'unread') {
-    list = list.filter(c => (props.unreadCounts[c.id] ?? 0) > 0)
-  }
   const q = search.value.trim().toLowerCase()
-  if (!q) return list
-  return list.filter(c => {
+  if (!q) return props.conversations
+  return props.conversations.filter(c => {
     const other = getOther(c)
     const name = (other.full_name || other.username || '').toLowerCase()
     return name.includes(q) || (c.last_message ?? '').toLowerCase().includes(q)
   })
 })
+
+// Reset to page 1 when search changes
+watch(search, () => { page.value = 1 })
 
 function getOther(conv: ConversationWithProfiles) {
   return conv.participant1_id === props.myId ? conv.participant2 : conv.participant1
@@ -51,62 +61,88 @@ const roleLabel: Record<string, string> = {
   admin: 'Admin',
   superadmin: 'Superadmin'
 }
+
+const filterTabs = [
+  { label: 'Semua', value: 'all' },
+  { label: 'Belum Dibaca', value: 'unread', slot: 'unread' }
+]
+
+function convActions(conv: ConversationWithProfiles): DropdownMenuItem[][] {
+  const hasUnread = (props.unreadCounts[conv.id] ?? 0) > 0
+  return [
+    [
+      {
+        label: 'Buka Percakapan',
+        icon: 'i-lucide-message-circle',
+        onSelect: () => { selectedId.value = conv.id }
+      }
+    ],
+    [
+      ...(hasUnread
+        ? [{
+            label: 'Tandai Sudah Dibaca',
+            icon: 'i-lucide-check-check',
+            onSelect: () => emit('mark-read', conv.id)
+          }]
+        : []
+      ),
+      {
+        label: 'Hapus Percakapan',
+        icon: 'i-lucide-trash-2',
+        color: 'error' as const,
+        onSelect: () => emit('delete-conv', conv.id)
+      }
+    ]
+  ]
+}
 </script>
 
 <template>
   <div class="flex flex-col h-full overflow-hidden">
     <!-- Search + Filter -->
-    <div class="px-3 pt-2.5 pb-2 border-b border-default shrink-0 space-y-1.5">
-      <!-- Plain search bar -->
-      <div class="flex items-center gap-2 bg-elevated/80 rounded-lg px-2.5 py-1.5 border border-default/50">
-        <UIcon name="i-lucide-search" class="size-3.5 text-dimmed shrink-0" />
-        <input
-          v-model="search"
-          class="flex-1 min-w-0 text-sm bg-transparent outline-none placeholder:text-dimmed text-default"
-          placeholder="Cari percakapan..."
-        />
-        <button
-          v-if="search"
-          type="button"
-          class="text-dimmed hover:text-default transition-colors"
-          @click="search = ''"
-        >
-          <UIcon name="i-lucide-x" class="size-3" />
-        </button>
-      </div>
+    <div class="px-3 pt-2.5 pb-0 border-b border-default shrink-0">
+      <!-- UInput search bar -->
+      <UInput
+        v-model="search"
+        icon="i-lucide-search"
+        placeholder="Cari percakapan..."
+        size="sm"
+        class="w-full mb-2"
+        :trailing-icon="search ? 'i-lucide-x' : undefined"
+        @click:trailing="search = ''"
+      />
       <!-- Filter tabs -->
-      <div class="flex gap-1">
-        <button
-          type="button"
-          class="flex-1 text-xs px-2 py-1 rounded-md font-medium transition-colors"
-          :class="filterMode === 'all'
-            ? 'bg-primary/10 text-primary'
-            : 'text-muted hover:bg-elevated hover:text-default'"
-          @click="filterMode = 'all'"
-        >
-          Semua
-        </button>
-        <button
-          type="button"
-          class="flex-1 text-xs px-2 py-1 rounded-md font-medium transition-colors flex items-center justify-center gap-1"
-          :class="filterMode === 'unread'
-            ? 'bg-primary/10 text-primary'
-            : 'text-muted hover:bg-elevated hover:text-default'"
-          @click="filterMode = 'unread'"
-        >
-          Belum Dibaca
-          <span
-            v-if="totalUnread > 0"
-            class="min-w-4 h-4 rounded-full px-1 text-[9px] font-bold flex items-center justify-center"
-            :class="filterMode === 'unread' ? 'bg-primary text-white' : 'bg-error/15 text-error'"
-          >{{ totalUnread > 99 ? '99+' : totalUnread }}</span>
-        </button>
-      </div>
+      <UTabs
+        v-model="filterMode"
+        :items="filterTabs"
+        :content="false"
+        size="sm"
+        class="w-full"
+        :ui="{ list: 'w-full', trigger: 'flex-1 justify-center' }"
+      >
+        <template #unread="{ item }">
+          <span class="flex items-center gap-1.5">
+            {{ item.label }}
+            <UBadge
+              v-if="totalUnread > 0"
+              :label="totalUnread > 99 ? '99+' : String(totalUnread)"
+              color="error"
+              variant="solid"
+              size="xs"
+            />
+          </span>
+        </template>
+      </UTabs>
+    </div>
+
+    <!-- Loading -->
+    <div v-if="loading && !conversations.length" class="flex-1 flex items-center justify-center">
+      <UIcon name="i-lucide-loader-circle" class="size-5 text-muted animate-spin" />
     </div>
 
     <!-- Empty state -->
     <div
-      v-if="!filtered.length"
+      v-else-if="!filtered.length"
       class="flex-1 flex flex-col items-center justify-center gap-3 text-muted p-6"
     >
       <UIcon name="i-lucide-message-circle-off" class="size-10 text-dimmed" />
@@ -121,11 +157,10 @@ const roleLabel: Record<string, string> = {
 
     <!-- List -->
     <div v-else class="flex-1 overflow-y-auto divide-y divide-default">
-      <button
+      <div
         v-for="conv in filtered"
         :key="conv.id"
-        type="button"
-        class="w-full text-left p-3 flex items-start gap-3 border-l-2 transition-colors hover:bg-elevated/60"
+        class="flex items-start gap-3 p-3 border-l-2 transition-colors hover:bg-elevated/60 cursor-pointer group"
         :class="selectedId === conv.id ? 'border-primary bg-primary/8' : 'border-transparent'"
         @click="selectedId = conv.id"
       >
@@ -154,7 +189,7 @@ const roleLabel: Record<string, string> = {
             <div class="flex items-center gap-1 shrink-0">
               <span
                 v-if="(unreadCounts[conv.id] ?? 0) > 0"
-                class="min-w-[18px] h-[18px] rounded-full bg-primary text-white text-[9px] font-bold flex items-center justify-center px-1"
+                class="min-w-4.5 h-4.5 rounded-full bg-primary text-white text-[9px] font-bold flex items-center justify-center px-1"
               >{{ (unreadCounts[conv.id] ?? 0) > 99 ? '99+' : unreadCounts[conv.id] }}</span>
               <span class="text-xs text-muted">{{ formatTime(conv.last_message_at) }}</span>
             </div>
@@ -176,7 +211,36 @@ const roleLabel: Record<string, string> = {
             </p>
           </div>
         </div>
-      </button>
+
+        <!-- 3-dot dropdown action -->
+        <div
+          class="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+          @click.stop
+        >
+          <UDropdownMenu
+            :items="convActions(conv)"
+            :content="{ align: 'end' }"
+          >
+            <UButton
+              icon="i-lucide-ellipsis-vertical"
+              color="neutral"
+              variant="ghost"
+              size="xs"
+              square
+            />
+          </UDropdownMenu>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div v-if="total > 0" class="shrink-0">
+      <Pagination
+        v-model:page="page"
+        v-model:limit="limit"
+        :total="total"
+        label="percakapan"
+      />
     </div>
   </div>
 </template>

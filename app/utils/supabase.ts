@@ -1,47 +1,17 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '~/types/database.types'
 
-let supabaseClient: ReturnType<typeof createClient<Database>> | null = null
-
 /**
- * Get or create Supabase client instance
- * This client uses the public anon key and is safe for client-side use
- */
-export function getSupabaseClient() {
-  if (supabaseClient) {
-    return supabaseClient
-  }
-
-  const config = useRuntimeConfig()
-  const supabaseUrl = config.public.supabaseUrl
-  const supabaseKey = config.public.supabaseKey
-
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Supabase URL and Key must be provided in environment variables')
-  }
-
-  supabaseClient = createClient<Database>(supabaseUrl, supabaseKey, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true
-    }
-  })
-
-  return supabaseClient
-}
-
-/**
- * Get Supabase client for server-side use with service role key
- * WARNING: This should only be used in server API routes
+ * Get Supabase client for server-side use with service role key.
+ * WARNING: Only use in server/api routes — never expose to client.
  */
 export function getSupabaseServiceClient() {
   const config = useRuntimeConfig()
-  const supabaseUrl = config.public.supabaseUrl
-  const supabaseServiceKey = config.supabaseServiceKey
+  const supabaseUrl = process.env.SUPABASE_URL ?? ''
+  const supabaseServiceKey = config.supabaseServiceKey ?? ''
 
   if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error('Supabase URL and Service Key must be provided for server operations')
+    throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set for server operations')
   }
 
   return createClient<Database>(supabaseUrl, supabaseServiceKey, {

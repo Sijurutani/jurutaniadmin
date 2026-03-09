@@ -20,7 +20,7 @@ type AuthUser = {
 const props = defineProps<{ profile: ProfileRow }>()
 const emit = defineEmits<{ updated: [] }>()
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 
 // ─── Auth info ────────────────────────────────────────────────────────────────

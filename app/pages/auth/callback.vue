@@ -1,9 +1,6 @@
 <script setup lang="ts">
 definePageMeta({
-  layout: 'plain',
-  auth: {
-    only: 'guest'
-  }
+  layout: 'plain'
 })
 
 const authStore = useAuthStore()
@@ -32,7 +29,9 @@ onMounted(async () => {
   <div class="h-screen flex items-center justify-center">
     <div class="flex flex-col items-center gap-3">
       <UIcon name="i-lucide-loader-circle" class="animate-spin size-8 text-primary" />
-      <p class="text-sm text-muted">Verifying your access...</p>
+      <p class="text-sm text-muted">
+        Verifying your access...
+      </p>
     </div>
   </div>
 </template>

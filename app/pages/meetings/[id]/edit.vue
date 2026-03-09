@@ -8,7 +8,7 @@ type MeetingRow = Database['public']['Tables']['meeting_schedules']['Row']
 
 useHead({ title: 'Edit Meeting – Jurutani Admin' })
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 const router = useRouter()
 const route = useRoute()

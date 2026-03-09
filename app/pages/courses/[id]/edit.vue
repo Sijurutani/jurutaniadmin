@@ -7,7 +7,7 @@ const courseId = route.params.id as string
 
 useHead({ title: 'Edit Course – Jurutani Admin' })
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 const router = useRouter()
 
@@ -31,7 +31,6 @@ const form = reactive<Schema>({
   status: 'pending'
 })
 
-const publishedAt = ref<string | null>(null)
 const description = ref<Record<string, any> | null>(null)
 const coverFile = ref<File | null>(null)
 const coverPreview = ref<string | null>(null)
@@ -65,7 +64,6 @@ watchEffect(() => {
   form.slug = c.slug ?? ''
   form.category = c.category ?? ''
   form.status = c.status
-  publishedAt.value = c.published_at ?? null
   description.value = (c.description as any) ?? null
   existingCoverUrl.value = c.cover_image ?? null
   lessonCount.value = (c as any).lessons?.[0]?.count ?? 0
@@ -76,7 +74,7 @@ watchEffect(() => {
       const saved = JSON.parse(raw)
       if (saved.form?.title) {
         Object.assign(form, saved.form)
-        publishedAt.value = saved.publishedAt ?? null
+
         if (saved.description) description.value = saved.description
         autosaveLabel.value = 'Draft lokal dipulihkan — simpan untuk konfirmasi'
       }
@@ -92,11 +90,10 @@ function onTitleInput() {
 }
 
 // ─── Autosave ─────────────────────────────────────────────────────────────────
-watchDebounced([form, publishedAt, description], () => {
+watchDebounced([form, description], () => {
   try {
     localStorage.setItem(DRAFT_KEY, JSON.stringify({
       form: { ...form },
-      publishedAt: publishedAt.value,
       description: description.value
     }))
     autosaveLabel.value = `Draft tersimpan ${new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`
@@ -131,8 +128,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     }
 
     const published_at = event.data.status === 'approved'
-      ? (publishedAt.value ?? course.value?.published_at ?? new Date().toISOString())
-      : (publishedAt.value ?? null)
+      ? (course.value?.published_at ?? new Date().toISOString())
+      : null
 
     const { error } = await supabase
       .from('learning_courses')
@@ -325,7 +322,6 @@ const displayCoverUrl = computed(() => coverPreview.value ?? getCoursePublicUrl(
           <div>
             <CoursesPublishPanel
               v-model:status="form.status"
-              v-model:published-at="publishedAt"
               :loading="saving"
               :course-id="courseId"
               :lesson-count="lessonCount"

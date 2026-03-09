@@ -10,7 +10,7 @@ export async function uploadNewsFile(
   newsId: string,
   file: File
 ): Promise<string> {
-  const supabase = getSupabaseClient()
+  const supabase = useSupabaseClient()
   const ext = file.name.split('.').pop() ?? 'bin'
   const timestamp = Date.now()
   const random = Math.random().toString(36).substring(2, 11)
@@ -32,7 +32,7 @@ export async function uploadNewsFile(
 export function getNewsPublicUrl(path: string | null): string | null {
   if (!path) return null
   if (path.startsWith('http')) return path
-  const supabase = getSupabaseClient()
+  const supabase = useSupabaseClient()
   const { data } = supabase.storage.from(BUCKET_NEWS).getPublicUrl(path)
   return data.publicUrl
 }
@@ -41,7 +41,7 @@ export function getNewsPublicUrl(path: string | null): string | null {
  * Delete a file from Supabase Storage by its full public URL or storage path
  */
 export async function deleteNewsFile(urlOrPath: string): Promise<void> {
-  const supabase = getSupabaseClient()
+  const supabase = useSupabaseClient()
   // Extract path from full URL if needed
   const storagePrefix = `/storage/v1/object/public/${BUCKET_NEWS}/`
   const path = urlOrPath.includes(storagePrefix)
@@ -64,7 +64,7 @@ export async function uploadMarketFile(
   marketId: string,
   file: File
 ): Promise<string> {
-  const supabase = getSupabaseClient()
+  const supabase = useSupabaseClient()
   const ext = file.name.split('.').pop() ?? 'bin'
   const timestamp = Date.now()
   const random = Math.random().toString(36).substring(2, 11)
@@ -86,13 +86,13 @@ export async function uploadMarketFile(
 export function getMarketPublicUrl(path: string | null): string | null {
   if (!path) return null
   if (path.startsWith('http')) return path
-  const supabase = getSupabaseClient()
+  const supabase = useSupabaseClient()
   const { data } = supabase.storage.from(BUCKET_MARKETS).getPublicUrl(path)
   return data.publicUrl
 }
 
 export async function deleteMarketFile(urlOrPath: string): Promise<void> {
-  const supabase = getSupabaseClient()
+  const supabase = useSupabaseClient()
   const storagePrefix = `/storage/v1/object/public/${BUCKET_MARKETS}/`
   const path = urlOrPath.includes(storagePrefix)
     ? urlOrPath.split(storagePrefix)[1]!
@@ -112,7 +112,7 @@ export async function uploadCourseFile(
   courseId: string,
   file: File
 ): Promise<string> {
-  const supabase = getSupabaseClient()
+  const supabase = useSupabaseClient()
   const ext = file.name.split('.').pop() ?? 'bin'
   const timestamp = Date.now()
   const random = Math.random().toString(36).substring(2, 11)
@@ -131,13 +131,13 @@ export async function uploadCourseFile(
 export function getCoursePublicUrl(path: string | null): string | null {
   if (!path) return null
   if (path.startsWith('http')) return path
-  const supabase = getSupabaseClient()
+  const supabase = useSupabaseClient()
   const { data } = supabase.storage.from(BUCKET_COURSES).getPublicUrl(path)
   return data.publicUrl
 }
 
 export async function deleteCourseFile(urlOrPath: string): Promise<void> {
-  const supabase = getSupabaseClient()
+  const supabase = useSupabaseClient()
   const storagePrefix = `/storage/v1/object/public/${BUCKET_COURSES}/`
   const path = urlOrPath.includes(storagePrefix)
     ? urlOrPath.split(storagePrefix)[1]!

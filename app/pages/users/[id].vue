@@ -7,7 +7,7 @@ type ProfileRow = Database['public']['Tables']['profiles']['Row']
 const route = useRoute()
 const userId = route.params.id as string
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 
 // ─── Profile (shared with child pages via useNuxtData) ────────────────────────
 const { data: profile, error: fetchError } = await useAsyncData(

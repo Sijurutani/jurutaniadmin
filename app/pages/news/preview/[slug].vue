@@ -8,7 +8,7 @@ type NewsRow = Database['public']['Tables']['news_updated']['Row'] & {
 }
 
 const route = useRoute()
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 const slug = route.params.slug as string
 

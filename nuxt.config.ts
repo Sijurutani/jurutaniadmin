@@ -4,18 +4,30 @@ export default defineNuxtConfig({
     '@nuxt/eslint',
     '@nuxt/ui',
     '@vueuse/nuxt',
-    '@pinia/nuxt'
+    '@pinia/nuxt',
+    '@nuxtjs/supabase'
   ],
+
+  devtools: {
+    enabled: true,
+
+    timeline: {
+      enabled: true
+    }
+  },
+
+  css: ['~/assets/css/main.css'],
 
   colorMode: {
     fallback: 'light'
   },
 
-  devtools: {
-    enabled: true
+  runtimeConfig: {
+    // Private keys are only available on the server
+    supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    groqApiKey: process.env.GROQ_API_KEY,
+    openrouterApiKey: process.env.OPENROUTER_API_KEY
   },
-
-  css: ['~/assets/css/main.css'],
 
   routeRules: {
     '/api/**': {
@@ -23,18 +35,7 @@ export default defineNuxtConfig({
     }
   },
 
-  runtimeConfig: {
-    // Private keys are only available on the server
-    supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY,
-    groqApiKey: process.env.GROQ_API_KEY,
-    openrouterApiKey: process.env.OPENROUTER_API_KEY,
-
-    // Public keys are exposed to the client
-    public: {
-      supabaseUrl: process.env.SUPABASE_URL,
-      supabaseKey: process.env.SUPABASE_KEY
-    }
-  },
+  compatibilityDate: '2024-07-11',
 
   vite: {
     optimizeDeps: {
@@ -48,14 +49,20 @@ export default defineNuxtConfig({
     }
   },
 
-  compatibilityDate: '2024-07-11',
-
   eslint: {
     config: {
       stylistic: {
         commaDangle: 'never',
         braceStyle: '1tbs'
       }
+    }
+  },
+
+  supabase: {
+    redirectOptions: {
+      login: '/signin',
+      callback: '/auth/callback',
+      exclude: ['/signin', '/auth/callback']
     }
   }
 })

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { isNotificationsSlideoverOpen } = useDashboard()
+useDashboard()
 const auth = useAuth()
 
 const today = new Date().toLocaleDateString('id-ID', {
@@ -47,27 +47,7 @@ async function doRefresh() {
               @click="doRefresh"
             />
           </UTooltip>
-          <UTooltip
-            text="Notifikasi"
-            :shortcuts="['N']"
-          >
-            <UButton
-              color="neutral"
-              variant="ghost"
-              square
-              @click="isNotificationsSlideoverOpen = true"
-            >
-              <UChip
-                color="error"
-                inset
-              >
-                <UIcon
-                  name="i-lucide-bell"
-                  class="size-5 shrink-0"
-                />
-              </UChip>
-            </UButton>
-          </UTooltip>
+
         </template>
       </UDashboardNavbar>
     </template>

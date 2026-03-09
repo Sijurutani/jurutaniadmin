@@ -2,7 +2,7 @@
 import * as z from 'zod'
 import type { FormError, FormSubmitEvent } from '@nuxt/ui'
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const auth = useAuth()
 const toast = useToast()
 

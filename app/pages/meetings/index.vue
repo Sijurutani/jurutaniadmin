@@ -19,7 +19,7 @@ const UIcon = resolveComponent('UIcon')
 
 useHead({ title: 'Meeting Schedules – Jurutani Admin' })
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 const table = useTemplateRef('table')
 

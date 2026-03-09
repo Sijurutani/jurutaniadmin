@@ -1,7 +1,6 @@
 <script setup lang="ts">
 interface Props {
   status: string
-  publishedAt: string | null | undefined
   loading?: boolean
   courseId?: string
   lessonCount?: number
@@ -14,7 +13,6 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   'update:status': [value: string]
-  'update:publishedAt': [value: string | null]
   'save': []
   'publish': []
 }>()
@@ -46,18 +44,6 @@ const currentStatusColor = computed(() => {
             class="w-full mt-1"
             @update:model-value="emit('update:status', $event)"
           />
-        </div>
-
-        <!-- Published At -->
-        <div class="space-y-1.5">
-          <label class="text-sm font-medium text-highlighted">Tanggal Publikasi</label>
-          <UInput
-            :model-value="publishedAt ?? ''"
-            type="datetime-local"
-            class="w-full"
-            @update:model-value="emit('update:publishedAt', $event || null)"
-          />
-          <p class="text-xs text-muted">Kosongkan untuk publish segera saat di-approve.</p>
         </div>
 
         <!-- Actions -->

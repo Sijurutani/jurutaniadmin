@@ -8,7 +8,7 @@ type District = Database['public']['Tables']['districts']['Row']
 
 useHead({ title: 'Maps – Jurutani Admin' })
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 
 const breakpoints = useBreakpoints(breakpointsTailwind)

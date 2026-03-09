@@ -5,7 +5,7 @@ import type { EmbedItem } from '~/utils/embed'
 
 useHead({ title: 'Buat Meeting – Jurutani Admin' })
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 const router = useRouter()
 

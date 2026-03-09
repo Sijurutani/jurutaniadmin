@@ -7,7 +7,7 @@ type InstructorRow = Database['public']['Tables']['instructors']['Row']
 
 const props = defineProps<{ userId: string }>()
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 
 // ─── Data ─────────────────────────────────────────────────────────────────────

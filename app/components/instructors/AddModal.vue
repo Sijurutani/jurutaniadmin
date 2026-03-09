@@ -8,7 +8,7 @@ type ProfileRow = Database['public']['Tables']['profiles']['Row']
 const emit = defineEmits<{ saved: [] }>()
 const open = defineModel<boolean>('open', { default: false })
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 
 // ─── User search ──────────────────────────────────────────────────────────────

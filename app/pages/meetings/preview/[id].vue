@@ -9,7 +9,7 @@ type MeetingRow = Database['public']['Tables']['meeting_schedules']['Row'] & {
 }
 
 const route = useRoute()
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 
 const meetingId = route.params.id as string
 

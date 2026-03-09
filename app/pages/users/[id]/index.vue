@@ -9,7 +9,7 @@ type ProfileRow = Database['public']['Tables']['profiles']['Row']
 const route = useRoute()
 const userId = route.params.id as string
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 
 // ─── Profile (from parent cache) ──────────────────────────────────────────────

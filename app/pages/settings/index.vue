@@ -3,7 +3,7 @@ import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 
 const auth = useAuth()
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 
 const fileRef = ref<HTMLInputElement>()

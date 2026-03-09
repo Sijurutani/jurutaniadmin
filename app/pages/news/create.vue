@@ -8,7 +8,7 @@ type Category = Database['public']['Tables']['category_news']['Row']
 
 useHead({ title: 'Buat Berita – Jurutani Admin' })
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 const router = useRouter()
 

@@ -8,7 +8,7 @@ type CategoryExpert = Database['public']['Tables']['category_expert']['Row']
 
 const props = defineProps<{ userId: string }>()
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 
 // ─── Data ─────────────────────────────────────────────────────────────────────

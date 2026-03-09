@@ -3,7 +3,7 @@ import { format, sub, eachDayOfInterval } from 'date-fns'
 import { id as idLocale } from 'date-fns/locale'
 import { VisXYContainer, VisLine, VisAxis, VisArea, VisCrosshair, VisTooltip } from '@unovis/vue'
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const cardRef = useTemplateRef<HTMLElement | null>('cardRef')
 const { width } = useElementSize(cardRef)
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 
 const now = new Date()
 const todayStr = now.toISOString().split('T')[0]!

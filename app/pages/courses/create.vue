@@ -4,7 +4,7 @@ import type { FormSubmitEvent, EditorSuggestionMenuItem } from '@nuxt/ui'
 
 useHead({ title: 'Buat Course – Jurutani Admin' })
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 const router = useRouter()
 
@@ -28,7 +28,6 @@ const form = reactive<Schema>({
   status: 'pending'
 })
 
-const publishedAt = ref<string | null>(null)
 const description = ref<Record<string, any> | null>(null)
 const coverFile = ref<File | null>(null)
 const coverPreview = ref<string | null>(null)
@@ -45,11 +44,10 @@ function onTitleInput() {
 // ─── Autosave ─────────────────────────────────────────────────────────────────
 const autosaveLabel = ref('')
 
-watchDebounced([form, publishedAt, description], () => {
+watchDebounced([form, description], () => {
   try {
     localStorage.setItem(DRAFT_KEY, JSON.stringify({
       form: { ...form },
-      publishedAt: publishedAt.value,
       description: description.value
     }))
     autosaveLabel.value = `Draft tersimpan ${new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`
@@ -64,7 +62,6 @@ onMounted(() => {
     const saved = JSON.parse(raw)
     if (saved.form?.title) {
       Object.assign(form, saved.form)
-      publishedAt.value = saved.publishedAt ?? null
       if (saved.description) description.value = saved.description
       autosaveLabel.value = 'Draft dipulihkan dari penyimpanan lokal'
     }
@@ -97,8 +94,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     }
 
     const published_at = event.data.status === 'approved'
-      ? (publishedAt.value ?? new Date().toISOString())
-      : (publishedAt.value ?? null)
+      ? new Date().toISOString()
+      : null
 
     const { data: inserted, error } = await supabase
       .from('learning_courses')
@@ -295,7 +292,6 @@ const categoryItems = Enum.CourseCategories.map(c => ({ label: c.label, value: c
           <div>
             <CoursesPublishPanel
               v-model:status="form.status"
-              v-model:published-at="publishedAt"
               :loading="saving"
             />
           </div>

@@ -14,8 +14,7 @@ const UCheckbox = resolveComponent('UCheckbox')
 
 useHead({ title: 'Videos – Jurutani Admin' })
 
-const supabase = useSupabase()
-const toast = useToast()
+const supabase = useSupabaseClient()
 const table = useTemplateRef('table')
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -144,17 +143,17 @@ const columns: TableColumn<VideoRow>[] = [
     enableHiding: false,
     header: ({ table: t }) =>
       h(UCheckbox, {
-        id: 'video-select-all',
-        modelValue: t.getIsSomePageRowsSelected() ? 'indeterminate' : t.getIsAllPageRowsSelected(),
+        'id': 'video-select-all',
+        'modelValue': t.getIsSomePageRowsSelected() ? 'indeterminate' : t.getIsAllPageRowsSelected(),
         'onUpdate:modelValue': (v: boolean | 'indeterminate') => t.toggleAllPageRowsSelected(!!v),
-        ariaLabel: 'Select all'
+        'ariaLabel': 'Select all'
       }),
     cell: ({ row }) =>
       h(UCheckbox, {
-        id: `video-select-${row.id}`,
-        modelValue: row.getIsSelected(),
+        'id': `video-select-${row.id}`,
+        'modelValue': row.getIsSelected(),
         'onUpdate:modelValue': (v: boolean | 'indeterminate') => row.toggleSelected(!!v),
-        ariaLabel: 'Select row'
+        'ariaLabel': 'Select row'
       })
   },
   {
@@ -312,7 +311,7 @@ const columnLabels: Record<string, string> = {
           thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
           tbody: '[&>tr]:last:[&>td]:border-b-0',
           th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
-          td: 'border-b border-default',
+          td: 'border-b border-default'
         }"
       />
     </template>

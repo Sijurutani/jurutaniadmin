@@ -9,7 +9,7 @@ type ProfileRow = Database['public']['Tables']['profiles']['Row']
 const UBadge = resolveComponent('UBadge')
 const UAvatar = resolveComponent('UAvatar')
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 
 const { data: recentUsers } = await useAsyncData('user-recent-list', async () => {
   const { data } = await supabase

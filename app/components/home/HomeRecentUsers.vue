@@ -2,7 +2,7 @@
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 
 const { data: users } = await useAsyncData('dashboard-recent-users', async () => {
   const { data } = await supabase

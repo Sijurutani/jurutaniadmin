@@ -2,7 +2,7 @@
 import { formatDistanceToNow } from 'date-fns'
 import { id } from 'date-fns/locale'
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 
 type PendingItem = {
   id: string

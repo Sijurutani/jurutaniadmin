@@ -9,7 +9,7 @@ type CategoryMarket = Database['public']['Tables']['category_markets']['Row']
 
 useHead({ title: 'Edit Produk – Jurutani Admin' })
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 const router = useRouter()
 const route = useRoute()

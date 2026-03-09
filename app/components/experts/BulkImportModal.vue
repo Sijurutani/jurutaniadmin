@@ -7,7 +7,7 @@ const props = defineProps<{ categories: CategoryExpert[] }>()
 const emit = defineEmits<{ saved: [] }>()
 const open = defineModel<boolean>('open', { default: false })
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 
 // ─── Steps: 1 = rules, 2 = upload + preview ──────────────────────────────────

@@ -24,7 +24,7 @@ const emit = defineEmits<{
   invalidated: [userId: string]
 }>()
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 
 function fmt(date: string | null) {

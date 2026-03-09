@@ -1,6 +1,14 @@
 #!/usr/bin/env node
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
+import {
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
+  ListToolsRequestSchema,
+  CallToolRequestSchema,
+  ListPromptsRequestSchema,
+  GetPromptRequestSchema
+} from '@modelcontextprotocol/sdk/types.js'
 import { getProjectContext, getNuxtUIComponents, getSupabasePatterns, getZodSchemas } from './context.js'
 
 /**
@@ -23,7 +31,7 @@ const server = new Server(
 )
 
 // Resource: Project Context
-server.setRequestHandler('resources/list', async () => {
+server.setRequestHandler(ListResourcesRequestSchema, async () => {
   return {
     resources: [
       {
@@ -54,7 +62,7 @@ server.setRequestHandler('resources/list', async () => {
   }
 })
 
-server.setRequestHandler('resources/read', async (request) => {
+server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
   const uri = request.params.uri
 
   switch (uri) {
@@ -108,7 +116,7 @@ server.setRequestHandler('resources/read', async (request) => {
 })
 
 // Tools: Code Generation
-server.setRequestHandler('tools/list', async () => {
+server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
       {
@@ -175,7 +183,7 @@ server.setRequestHandler('tools/list', async () => {
   }
 })
 
-server.setRequestHandler('tools/call', async (request) => {
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params
 
   try {
@@ -327,7 +335,7 @@ if (error) {
 }
 
 // Prompts: Common scenarios
-server.setRequestHandler('prompts/list', async () => {
+server.setRequestHandler(ListPromptsRequestSchema, async () => {
   return {
     prompts: [
       {
@@ -356,7 +364,7 @@ server.setRequestHandler('prompts/list', async () => {
   }
 })
 
-server.setRequestHandler('prompts/get', async (request) => {
+server.setRequestHandler(GetPromptRequestSchema, async (request) => {
   const { name, arguments: args } = request.params
 
   switch (name) {

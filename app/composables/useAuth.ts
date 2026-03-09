@@ -3,4 +3,3 @@
  * Use this in components/pages/middleware to keep access consistent.
  */
 export const useAuth = () => useAuthStore()
-

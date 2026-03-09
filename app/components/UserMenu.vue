@@ -16,6 +16,8 @@ const user = computed(() => ({
   }
 }))
 
+const isAdmin = computed(() => authStore.isAdmin)
+
 const items = computed<DropdownMenuItem[][]>(() => ([[{
   type: 'label',
   label: user.value.name,
@@ -83,7 +85,24 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
       :ui="{
         trailingIcon: 'text-dimmed'
       }"
-    />
+    >
+      <template
+        v-if="!collapsed && isAdmin"
+        #trailing
+      >
+        <UBadge
+          label="Admin"
+          color="primary"
+          variant="subtle"
+          size="sm"
+          class="ml-auto"
+        />
+        <UIcon
+          name="i-lucide-chevrons-up-down"
+          class="text-dimmed shrink-0"
+        />
+      </template>
+    </UButton>
 
   </UDropdownMenu>
 </template>

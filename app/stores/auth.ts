@@ -5,7 +5,7 @@ import type { Database } from '~/types/database.types'
 type Profile = Database['public']['Tables']['profiles']['Row']
 
 export const useAuthStore = defineStore('auth', () => {
-  const supabase = useSupabase()
+  const supabase = useSupabaseClient()
   const router = useRouter()
 
   const profile = ref<Profile | null>(null)

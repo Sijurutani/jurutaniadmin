@@ -11,7 +11,7 @@ const props = defineProps<{ userId: string }>()
 const UBadge = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 
 const page = ref(1)
@@ -31,15 +31,6 @@ const { data: newsData, refresh, pending } = await useAsyncData(`user-news-${pro
   default: () => ({ data: [] as NewsRow[], count: 0 }),
   watch: [page]
 })
-
-async function updateStatus(item: NewsRow, newStatus: string) {
-  const updates: Record<string, any> = { status_news: newStatus }
-  if (newStatus === 'approved' && !item.published_at) updates.published_at = new Date().toISOString()
-  const { error } = await supabase.from('news_updated').update(updates).eq('id', item.id)
-  if (error) { toast.add({ title: 'Error', description: error.message, color: 'error' }); return }
-  toast.add({ title: 'Status diperbarui', color: 'success', duration: 2000 })
-  await refresh()
-}
 
 async function softDelete(item: NewsRow) {
   const { error } = await supabase.from('news_updated').update({
@@ -142,7 +133,7 @@ const totalPages = computed(() => Math.ceil((newsData.value?.count ?? 0) / limit
         thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
         tbody: '[&>tr]:last:[&>td]:border-b-0',
         th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
-        td: 'border-b border-default',
+        td: 'border-b border-default'
       }"
     />
 
@@ -150,8 +141,22 @@ const totalPages = computed(() => Math.ceil((newsData.value?.count ?? 0) / limit
       <div class="flex items-center justify-between px-2 py-1 text-xs text-muted">
         <span>Halaman {{ page }} dari {{ totalPages }}</span>
         <div class="flex gap-1">
-          <UButton :disabled="page <= 1" icon="i-lucide-chevron-left" size="xs" color="neutral" variant="ghost" @click="page--" />
-          <UButton :disabled="page >= totalPages" icon="i-lucide-chevron-right" size="xs" color="neutral" variant="ghost" @click="page++" />
+          <UButton
+            :disabled="page <= 1"
+            icon="i-lucide-chevron-left"
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            @click="page--"
+          />
+          <UButton
+            :disabled="page >= totalPages"
+            icon="i-lucide-chevron-right"
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            @click="page++"
+          />
         </div>
       </div>
     </template>

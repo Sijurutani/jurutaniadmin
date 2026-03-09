@@ -19,7 +19,7 @@ const UAvatar = resolveComponent('UAvatar')
 
 useHead({ title: 'News – Jurutani Admin' })
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 const table = useTemplateRef('table')
 

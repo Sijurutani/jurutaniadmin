@@ -6,7 +6,7 @@ import type { Database } from '~/types/database.types'
 type HeroRow = Database['public']['Tables']['hero_data']['Row']
 
 const BUCKET_HERO = 'hero-image'
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 
 // ─── Data ─────────────────────────────────────────────────────────────────────

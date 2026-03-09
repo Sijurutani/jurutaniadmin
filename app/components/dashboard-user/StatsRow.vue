@@ -3,7 +3,7 @@ import type { Range } from '~/types'
 
 const props = defineProps<{ range: Range }>()
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 
 const { data: stats } = await useAsyncData('user-dashboard-stats', async () => {
   const [total, petani, pakar, penyuluh, adminRes, newInRange, deletedRes] = await Promise.all([

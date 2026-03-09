@@ -8,7 +8,7 @@ const courseId = route.params.id as string
 
 useHead({ title: 'Kelola Lesson – Jurutani Admin' })
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 
 // ─── Course meta ──────────────────────────────────────────────────────────────
@@ -19,9 +19,9 @@ const { data: course } = await useAsyncData(`lesson-manager-course-${courseId}`,
     .eq('id', courseId)
     .single()
   return data
-})
+}, { server: false })
 
-if (!course.value) { await navigateTo('/courses') }
+if (import.meta.client && !course.value) { await navigateTo('/courses') }
 
 // ─── Lesson list (metadata only) ─────────────────────────────────────────────
 interface LessonMeta {
@@ -85,6 +85,11 @@ interface LessonFull extends LessonMeta {
   embeds: EmbedItem[]
 }
 
+// TipTap JSON validator – only a ProseMirror doc with `type: 'doc'` is valid
+function isValidTiptapDoc(content: unknown): boolean {
+  return !!(content && typeof content === 'object' && (content as any).type === 'doc')
+}
+
 const activeLesson = ref<LessonFull | null>(null)
 const loadingLesson = ref(false)
 const unsavedChanges = ref(false)
@@ -100,12 +105,14 @@ async function selectLesson(lesson: LessonMeta) {
     const raw = localStorage.getItem(DRAFT_KEY)
     if (raw) {
       const saved = JSON.parse(raw)
-      activeLesson.value = { ...lesson, content: saved.content ?? null, embeds: saved.embeds ?? [] }
+      const draftContent = isValidTiptapDoc(saved.content) ? saved.content : null
+      activeLesson.value = { ...lesson, content: draftContent, embeds: saved.embeds ?? [] }
       Object.assign(lessonForm, saved.form ?? {})
       lessonForm.title = saved.form?.title ?? lesson.title
       lessonForm.slug = saved.form?.slug ?? lesson.slug
       lessonForm.status = saved.form?.status ?? lesson.status
-      lessonForm.publishedAt = saved.form?.publishedAt ?? lesson.published_at ?? ''
+      lessonContent.value = draftContent
+      lessonEmbeds.value = saved.embeds ?? []
       unsavedChanges.value = true
       loadingLesson.value = false
       return
@@ -122,15 +129,14 @@ async function selectLesson(lesson: LessonMeta) {
   if (data) {
     activeLesson.value = {
       ...lesson,
-      content: (data.content as any) ?? null,
+      content: isValidTiptapDoc(data.content) ? (data.content as any) : null,
       embeds: (data.embeds as any) ?? []
     }
     lessonForm.title = data.title
     lessonForm.slug = data.slug
     lessonForm.status = data.status
-    lessonForm.publishedAt = data.published_at ?? ''
     lessonEmbeds.value = (data.embeds as any) ?? []
-    lessonContent.value = (data.content as any) ?? null
+    lessonContent.value = isValidTiptapDoc(data.content) ? (data.content as any) : null
   }
   unsavedChanges.value = false
   loadingLesson.value = false
@@ -140,8 +146,7 @@ async function selectLesson(lesson: LessonMeta) {
 const lessonSchema = z.object({
   title: z.string().min(1, 'Judul wajib diisi').max(200),
   slug: z.string().min(1).max(200).regex(/^[a-z0-9-]+$/, 'Hanya huruf kecil, angka, dan tanda -'),
-  status: z.string(),
-  publishedAt: z.string().optional()
+  status: z.string()
 })
 
 type LessonSchema = z.output<typeof lessonSchema>
@@ -149,8 +154,7 @@ type LessonSchema = z.output<typeof lessonSchema>
 const lessonForm = reactive<LessonSchema>({
   title: '',
   slug: '',
-  status: 'pending',
-  publishedAt: ''
+  status: 'pending'
 })
 
 const lessonContent = ref<Record<string, any> | null>(null)
@@ -189,7 +193,10 @@ async function saveLesson() {
 
   savingLesson.value = true
   try {
-    const published_at = lessonForm.publishedAt || null
+    const currentLesson = lessons.value.find(l => l.id === activeLesson.value!.id)
+    const published_at = lessonForm.status === 'approved'
+      ? (currentLesson?.published_at ?? new Date().toISOString())
+      : null
 
     const { error } = await supabase
       .from('course_lessons')
@@ -230,11 +237,32 @@ async function saveLesson() {
 // ─── Add new lesson ───────────────────────────────────────────────────────────
 const addingLesson = ref(false)
 const newLessonTitle = ref('')
+const newLessonSlug = ref('')
 const addLessonOpen = ref(false)
+const slugManuallyEdited = ref(false)
+
+watch(newLessonTitle, (val) => {
+  if (!slugManuallyEdited.value) {
+    newLessonSlug.value = slugify(val)
+  }
+})
+
+function openAddLesson() {
+  newLessonTitle.value = ''
+  newLessonSlug.value = ''
+  slugManuallyEdited.value = false
+  addLessonOpen.value = true
+}
 
 async function addLesson() {
   const title = newLessonTitle.value.trim()
+  const slug = newLessonSlug.value.trim() || slugify(title)
   if (!title) return
+
+  // Check slug conflict within this course
+  const existing = lessons.value.find(l => l.slug === slug)
+  const finalSlug = existing ? `${slug}-${Date.now().toString(36)}` : slug
+
   addingLesson.value = true
   try {
     const { data, error } = await supabase
@@ -242,7 +270,7 @@ async function addLesson() {
       .insert({
         course_id: courseId,
         title,
-        slug: slugify(title),
+        slug: finalSlug,
         order_index: lessons.value.length,
         status: 'pending',
         content: {},
@@ -255,6 +283,8 @@ async function addLesson() {
 
     lessons.value.push(data as LessonMeta)
     newLessonTitle.value = ''
+    newLessonSlug.value = ''
+    slugManuallyEdited.value = false
     addLessonOpen.value = false
     toast.add({ title: 'Lesson ditambahkan', color: 'success', duration: 2000 })
     await selectLesson(data as LessonMeta)
@@ -436,7 +466,7 @@ function removeLessonEmbed(id: string) {
               icon="i-lucide-plus"
               size="xs"
               label="Tambah"
-              @click="addLessonOpen = true"
+              @click="openAddLesson"
             />
           </div>
 
@@ -496,7 +526,7 @@ function removeLessonEmbed(id: string) {
           </div>
 
           <!-- Form -->
-          <div v-else-if="activeLesson" class="flex-1 overflow-y-auto p-4 lg:p-6 space-y-5">
+          <div v-else-if="activeLesson" :key="activeLesson.id" class="flex-1 overflow-y-auto p-4 lg:p-6 space-y-5">
             <!-- Header row -->
             <div class="flex items-center justify-between gap-3">
               <div class="flex items-center gap-2">
@@ -509,12 +539,22 @@ function removeLessonEmbed(id: string) {
                   label="Perubahan belum disimpan"
                 />
               </div>
-              <UButton
-                icon="i-lucide-save"
-                label="Simpan"
-                :loading="savingLesson"
-                @click="saveLesson"
-              />
+              <div class="flex items-center gap-2">
+                <UButton
+                  icon="i-lucide-eye"
+                  label="Preview"
+                  color="neutral"
+                  variant="outline"
+                  size="sm"
+                  :to="`/courses/${courseId}/lesson-preview/${activeLesson.id}`"
+                />
+                <UButton
+                  icon="i-lucide-save"
+                  label="Simpan"
+                  :loading="savingLesson"
+                  @click="saveLesson"
+                />
+              </div>
             </div>
 
             <!-- Title + Slug -->
@@ -536,7 +576,7 @@ function removeLessonEmbed(id: string) {
                   />
                 </UFormField>
 
-                <div class="grid grid-cols-2 gap-3">
+                <div>
                   <UFormField label="Status">
                     <USelect
                       v-model="lessonForm.status"
@@ -544,18 +584,10 @@ function removeLessonEmbed(id: string) {
                       class="w-full"
                     />
                   </UFormField>
-
-                  <UFormField label="Publish At (Drip)">
-                    <UInput
-                      v-model="lessonForm.publishedAt"
-                      type="datetime-local"
-                      class="w-full"
-                    />
-                  </UFormField>
                 </div>
                 <p class="text-xs text-muted">
                   <UIcon name="i-lucide-info" class="size-3 inline mr-1" />
-                  Lesson hanya tampil jika status <strong>approved</strong> dan tanggal publish sudah tiba.
+                  Lesson hanya tampil jika status <strong>approved</strong>.
                 </p>
               </div>
             </UPageCard>
@@ -653,19 +685,33 @@ function removeLessonEmbed(id: string) {
   <!-- Add lesson modal -->
   <UModal v-model:open="addLessonOpen" title="Tambah Lesson Baru">
     <template #body>
-      <UFormField label="Judul Lesson">
-        <UInput
-          v-model="newLessonTitle"
-          placeholder="Contoh: Pengenalan Alat dan Bahan"
-          class="w-full"
-          @keyup.enter="addLesson"
-        />
-      </UFormField>
+      <div class="space-y-3">
+        <UFormField label="Judul Lesson">
+          <UInput
+            v-model="newLessonTitle"
+            placeholder="Contoh: Pengenalan Alat dan Bahan"
+            class="w-full"
+            autofocus
+            @keyup.enter="addLesson"
+          />
+        </UFormField>
+        <UFormField label="Slug (URL)">
+          <UInput
+            v-model="newLessonSlug"
+            placeholder="otomatis dari judul"
+            class="w-full font-mono text-sm"
+            @input="slugManuallyEdited = true"
+          />
+          <template #hint>
+            <span class="text-xs text-muted">Digunakan sebagai ID URL lesson</span>
+          </template>
+        </UFormField>
+      </div>
     </template>
     <template #footer>
       <div class="flex justify-end gap-2">
         <UButton color="neutral" variant="outline" label="Batal" @click="addLessonOpen = false" />
-        <UButton label="Tambah" :loading="addingLesson" @click="addLesson" />
+        <UButton label="Tambah" :loading="addingLesson" :disabled="!newLessonTitle.trim()" @click="addLesson" />
       </div>
     </template>
   </UModal>

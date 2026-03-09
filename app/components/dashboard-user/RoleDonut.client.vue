@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { VisSingleContainer, VisDonut } from '@unovis/vue'
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 
 type RoleData = { role: string; label: string; count: number; cssColor: string; icon: string }
 

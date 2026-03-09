@@ -27,7 +27,7 @@ const UIcon = resolveComponent('UIcon')
 
 useHead({ title: 'Courses – Jurutani Admin' })
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 const table = useTemplateRef('table')
 

@@ -14,7 +14,7 @@ const props = defineProps<{ instructor: InstructorWithProfile | null }>()
 const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{ saved: [] }>()
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 
 // ─── Districts ─────────────────────────────────────────────────────────────────

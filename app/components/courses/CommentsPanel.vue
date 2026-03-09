@@ -23,15 +23,20 @@ interface Comment {
 const props = defineProps<{
   courseId: string
   lessons: { id: string, title: string }[]
+  lessonId?: string
 }>()
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 
 // ─── State ────────────────────────────────────────────────────────────────────
 const comments = ref<Comment[]>([])
 const loading = ref(false)
-const filterLesson = ref<string>('all')
+const filterLesson = ref<string>(props.lessonId ?? 'all')
+
+watch(() => props.lessonId, (id) => {
+  filterLesson.value = id ?? 'all'
+})
 const showHidden = ref(false)
 const actionLoadingId = ref<string | null>(null)
 

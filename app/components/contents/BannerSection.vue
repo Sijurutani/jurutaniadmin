@@ -4,7 +4,7 @@ import type { Database } from '~/types/database.types'
 type BannerRow = Database['public']['Tables']['banner']['Row']
 
 const BUCKET_BANNER = 'banner-image'
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 
 // ─── Data ─────────────────────────────────────────────────────────────────────

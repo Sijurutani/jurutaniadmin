@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { differenceInDays, differenceInHours, isPast } from 'date-fns'
-
 interface Props {
   lesson: {
     id: string
@@ -16,21 +14,9 @@ interface Props {
 const props = defineProps<Props>()
 defineEmits<{ select: []; delete: [] }>()
 
-const dripLabel = computed(() => {
-  if (!props.lesson.published_at) return null
-  const date = new Date(props.lesson.published_at)
-  if (isPast(date)) return null
-  const days = differenceInDays(date, new Date())
-  if (days > 0) return `Rilis dalam ${days} hari`
-  const hours = differenceInHours(date, new Date())
-  return `Rilis dalam ${hours} jam`
-})
-
 const statusDot = computed(() => {
   switch (props.lesson.status) {
-    case 'approved': return props.lesson.published_at && isPast(new Date(props.lesson.published_at))
-      ? { icon: 'i-lucide-circle-check', class: 'text-success-500' }
-      : { icon: 'i-lucide-clock', class: 'text-warning-500' }
+    case 'approved': return { icon: 'i-lucide-circle-check', class: 'text-success-500' }
     case 'pending': return { icon: 'i-lucide-circle', class: 'text-muted' }
     case 'rejected': return { icon: 'i-lucide-circle-x', class: 'text-error-500' }
     case 'archived': return { icon: 'i-lucide-archive', class: 'text-muted' }
@@ -64,10 +50,7 @@ const statusDot = computed(() => {
       <p class="text-sm truncate" :class="active ? 'font-semibold text-primary-600 dark:text-primary-400' : 'text-highlighted'">
         {{ lesson.title }}
       </p>
-      <p v-if="dripLabel" class="text-xs text-warning-500 flex items-center gap-1 mt-0.5">
-        <UIcon name="i-lucide-timer" class="size-3" />
-        {{ dripLabel }}
-      </p>
+
     </div>
 
     <!-- Delete (hover only) -->

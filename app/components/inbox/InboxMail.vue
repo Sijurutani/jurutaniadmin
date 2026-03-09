@@ -18,7 +18,7 @@ const emit = defineEmits<{
   refreshList: []
 }>()
 
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const auth = useAuth()
 const toast = useToast()
 

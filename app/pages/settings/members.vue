@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const supabase = useSupabase()
+const supabase = useSupabaseClient()
 const toast = useToast()
 
 const q = ref('')

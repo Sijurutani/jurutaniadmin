@@ -3,10 +3,7 @@ import { z } from 'zod'
 import type { AuthFormField, ButtonProps, FormSubmitEvent } from '@nuxt/ui'
 
 definePageMeta({
-  layout: 'auth',
-  auth: {
-    only: 'guest'
-  }
+  layout: 'auth'
 })
 
 const toast = useToast()
