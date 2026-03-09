@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { serverSupabaseServiceRole } from '#supabase/server'
 import * as z from 'zod'
 import type { Database } from '~/types/database.types'
 
@@ -18,10 +18,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Invalid body', data: parsed.error.errors })
   }
 
-  const config = useRuntimeConfig()
-  const admin = createClient<Database>(config.public.supabaseUrl, config.supabaseServiceKey, {
-    auth: { persistSession: false, autoRefreshToken: false }
-  })
+  const admin = serverSupabaseServiceRole<Database>(event)
 
   const { error } = await admin.auth.admin.updateUserById(userId, {
     ban_duration: parsed.data.action === 'ban' ? '876000h' : 'none'

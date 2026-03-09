@@ -7,7 +7,7 @@ type ExpertRow = Database['public']['Tables']['experts']['Row']
 type ProfileRow = Database['public']['Tables']['profiles']['Row']
 type CategoryExpert = Database['public']['Tables']['category_expert']['Row']
 type ExpertWithProfile = ExpertRow & {
-  profile: Pick<ProfileRow, 'id' | 'full_name' | 'username' | 'email' | 'avatar_url' | 'role' | 'phone' | 'bio' | 'address' | 'birth_date' | 'website'> | null
+  profile: Partial<ProfileRow> | null
 }
 
 const props = defineProps<{
@@ -35,12 +35,18 @@ const state = reactive<Partial<Schema>>({
   full_name: '', phone: '', address: '', bio: '', category: '', note: ''
 })
 
-watch([() => props.expert, open], ([expert, isOpen]) => {
+watch([() => props.expert, open], async ([expert, isOpen]) => {
   if (isOpen && expert) {
-    state.full_name = expert.profile?.full_name ?? ''
-    state.phone = expert.profile?.phone ?? ''
-    state.address = expert.profile?.address ?? ''
-    state.bio = expert.profile?.bio ?? ''
+    // Fetch profil terkini agar form selalu terisi dengan data aktual
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, phone, address, bio')
+      .eq('id', expert.user_id)
+      .single()
+    state.full_name = profile?.full_name ?? expert.profile?.full_name ?? ''
+    state.phone = profile?.phone ?? expert.profile?.phone ?? ''
+    state.address = profile?.address ?? expert.profile?.address ?? ''
+    state.bio = profile?.bio ?? expert.profile?.bio ?? ''
     state.category = expert.category ?? ''
     state.note = expert.note ?? ''
   }

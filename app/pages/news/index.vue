@@ -25,7 +25,10 @@ const table = useTemplateRef('table')
 
 // ─── State ───────────────────────────────────────────────────────────────────
 const rowSelection = ref<Record<string, boolean>>({})
-const columnVisibility = ref<Record<string, boolean>>({})
+const columnVisibility = ref<Record<string, boolean>>({
+  cover: false,
+  author: false
+})
 
 // URL-persisted filter/sort/page/limit state
 const search = useRouteQuery<string | undefined>('search', undefined, { resetKeys: ['page'] })
@@ -58,12 +61,21 @@ const { data: categories } = await useAsyncData('news-categories', async () => {
   return (data ?? []) as Category[]
 }, { default: () => [] as Category[] })
 
+// Select reaktif — JOIN author hanya saat kolom author ditampilkan
+const selectString = computed(() => {
+  const base = 'id, title, sub_title, category, status_news, created_at, slug, cover_image, images, published_at'
+  const authorJoin = columnVisibility.value.author !== false
+    ? ', author:profiles(id, full_name, username, avatar_url)'
+    : ''
+  return `${base}${authorJoin}`
+})
+
 const newsQuery = computed(() => {
   const [field, dir] = sortValue.value.split('-') as [string, string]
   const dbField = field === 'name' ? 'title' : field
   let q = supabase
     .from('news_updated')
-    .select('*, author:profiles(id, full_name, username, avatar_url)', { count: 'exact' })
+    .select(selectString.value, { count: 'exact' })
     .is('deleted_at', null)
     .order(dbField, { ascending: dir === 'asc' })
 
@@ -88,6 +100,11 @@ watchDebounced([search, filterCategory, filterStatus], async () => {
   page.value = 1
   await refresh()
 }, { debounce: 400, deep: true })
+
+// Refresh saat kolom author di-toggle (karena SELECT berubah)
+watch(() => columnVisibility.value.author, async () => {
+  await refresh()
+})
 
 // ─── Status actions ──────────────────────────────────────────────────────────
 async function updateStatus(item: NewsRow, newStatus: string) {
@@ -238,17 +255,17 @@ const columns: TableColumn<NewsRow>[] = [
     enableHiding: false,
     header: ({ table: t }) =>
       h(UCheckbox, {
-        id: 'news-select-all',
-        modelValue: t.getIsSomePageRowsSelected() ? 'indeterminate' : t.getIsAllPageRowsSelected(),
+        'id': 'news-select-all',
+        'modelValue': t.getIsSomePageRowsSelected() ? 'indeterminate' : t.getIsAllPageRowsSelected(),
         'onUpdate:modelValue': (v: boolean | 'indeterminate') => t.toggleAllPageRowsSelected(!!v),
-        ariaLabel: 'Select all'
+        'ariaLabel': 'Select all'
       }),
     cell: ({ row }) =>
       h(UCheckbox, {
-        id: `news-select-${row.id}`,
-        modelValue: row.getIsSelected(),
+        'id': `news-select-${row.id}`,
+        'modelValue': row.getIsSelected(),
         'onUpdate:modelValue': (v: boolean | 'indeterminate') => row.toggleSelected(!!v),
-        ariaLabel: 'Select row'
+        'ariaLabel': 'Select row'
       })
   },
   {
@@ -324,15 +341,6 @@ const columns: TableColumn<NewsRow>[] = [
         format(new Date(row.original.created_at), 'dd MMM yyyy', { locale: localeId }))
   },
   {
-    accessorKey: 'published_at',
-    header: 'Dipublikasikan',
-    cell: ({ row }) =>
-      h('span', { class: 'text-sm text-muted whitespace-nowrap' },
-        row.original.published_at
-          ? format(new Date(row.original.published_at), 'dd MMM yyyy', { locale: localeId })
-          : '-')
-  },
-  {
     id: 'actions',
     enableHiding: false,
     cell: ({ row }) =>
@@ -352,8 +360,7 @@ const columnLabels: Record<string, string> = {
   category: 'Kategori',
   status_news: 'Status',
   author: 'Penulis',
-  created_at: 'Dibuat',
-  published_at: 'Dipublikasikan'
+  created_at: 'Dibuat'
 }
 
 const categoryOptions = computed(() =>
@@ -479,7 +486,7 @@ const bulkStatusOptions = Enum.StatusNews.map(s => ({
           thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
           tbody: '[&>tr]:last:[&>td]:border-b-0',
           th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
-          td: 'border-b border-default',
+          td: 'border-b border-default'
         }"
       />
     </template>

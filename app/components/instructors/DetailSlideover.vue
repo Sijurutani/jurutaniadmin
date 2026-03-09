@@ -6,7 +6,7 @@ import type { Database } from '~/types/database.types'
 type InstructorRow = Database['public']['Tables']['instructors']['Row']
 type ProfileRow = Database['public']['Tables']['profiles']['Row']
 export type InstructorWithProfile = InstructorRow & {
-  profile: Pick<ProfileRow, 'id' | 'full_name' | 'username' | 'email' | 'avatar_url' | 'role' | 'phone' | 'bio' | 'address' | 'birth_date' | 'website'> | null
+  profile: Partial<ProfileRow> | null
 }
 
 const props = defineProps<{ instructor: InstructorWithProfile | null }>()
@@ -14,13 +14,37 @@ const props = defineProps<{ instructor: InstructorWithProfile | null }>()
 const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{ edit: [instructor: InstructorWithProfile] }>()
 
-function fmtDate(d: string | null) {
+const supabase = useSupabaseClient()
+
+// Fetch profil lengkap saat slideover dibuka
+const fullProfile = ref<Partial<ProfileRow> | null>(null)
+const loadingProfile = ref(false)
+
+watch(open, async (isOpen) => {
+  if (!isOpen || !props.instructor?.user_id) {
+    fullProfile.value = null
+    return
+  }
+  loadingProfile.value = true
+  const { data } = await supabase
+    .from('profiles')
+    .select('id, full_name, username, email, avatar_url, role, phone, bio, address, birth_date, website')
+    .eq('id', props.instructor.user_id)
+    .single()
+  fullProfile.value = data
+  loadingProfile.value = false
+})
+
+// Gunakan fullProfile jika ada, fallback ke props.instructor.profile
+const profile = computed(() => fullProfile.value ?? props.instructor?.profile ?? null)
+
+function fmtDate(d: string | null | undefined) {
   if (!d) return '-'
   return format(new Date(d), 'dd MMM yyyy', { locale: localeId })
 }
 
 const roleInfo = computed(() => {
-  const role = props.instructor?.profile?.role
+  const role = profile.value?.role
   if (!role) return null
   return Enum.UserRole.find(r => r.value === role) ?? null
 })
@@ -38,14 +62,25 @@ const roleInfo = computed(() => {
             size="xl"
           />
           <div class="text-center">
-            <p class="text-lg font-semibold text-highlighted">{{ instructor.profile?.full_name ?? '-' }}</p>
-            <p class="text-sm text-muted">@{{ instructor.profile?.username ?? '-' }}</p>
+            <p class="text-lg font-semibold text-highlighted">
+              {{ profile?.full_name ?? '-' }}
+            </p>
+            <p class="text-sm text-muted">
+              @{{ profile?.username ?? '-' }}
+            </p>
           </div>
           <div class="flex items-center gap-2 flex-wrap justify-center">
-            <UBadge v-if="roleInfo" :color="roleInfo.color as any" variant="soft" :leading-icon="roleInfo.icon">
+            <UBadge
+              v-if="roleInfo"
+              :color="roleInfo.color as any"
+              variant="soft"
+              :leading-icon="roleInfo.icon"
+            >
               {{ roleInfo.label }}
             </UBadge>
-            <UBadge color="warning" variant="soft" leading-icon="i-lucide-book-open">Penyuluh</UBadge>
+            <UBadge color="warning" variant="soft" leading-icon="i-lucide-book-open">
+              Penyuluh
+            </UBadge>
           </div>
         </div>
 
@@ -53,60 +88,113 @@ const roleInfo = computed(() => {
 
         <!-- Profile data -->
         <div>
-          <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-3">Data Profil</p>
-          <div class="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
-            <div class="col-span-2">
-              <p class="text-xs text-muted mb-0.5 uppercase font-medium">Email</p>
-              <p class="text-highlighted break-all">{{ instructor.profile?.email ?? '-' }}</p>
-            </div>
-            <div>
-              <p class="text-xs text-muted mb-0.5 uppercase font-medium">Telepon</p>
-              <p class="text-highlighted">{{ instructor.profile?.phone ?? '-' }}</p>
-            </div>
-            <div>
-              <p class="text-xs text-muted mb-0.5 uppercase font-medium">Tanggal Lahir</p>
-              <p class="text-highlighted">{{ fmtDate(instructor.profile?.birth_date ?? null) }}</p>
-            </div>
-            <div class="col-span-2">
-              <p class="text-xs text-muted mb-0.5 uppercase font-medium">Alamat</p>
-              <p class="text-highlighted">{{ instructor.profile?.address ?? '-' }}</p>
-            </div>
-            <div class="col-span-2">
-              <p class="text-xs text-muted mb-0.5 uppercase font-medium">Bio</p>
-              <p class="text-highlighted leading-relaxed">{{ instructor.profile?.bio ?? '-' }}</p>
-            </div>
-            <div class="col-span-2">
-              <p class="text-xs text-muted mb-0.5 uppercase font-medium">Website</p>
-              <p class="text-highlighted break-all">{{ instructor.profile?.website ?? '-' }}</p>
-            </div>
+          <div v-if="loadingProfile" class="flex justify-center py-6">
+            <UIcon name="i-lucide-loader-circle" class="size-5 text-muted animate-spin" />
           </div>
+          <template v-else>
+            <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-3">
+              Data Profil
+            </p>
+            <div class="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
+              <div class="col-span-2">
+                <p class="text-xs text-muted mb-0.5 uppercase font-medium">
+                  Email
+                </p>
+                <p class="text-highlighted break-all">
+                  {{ profile?.email ?? '-' }}
+                </p>
+              </div>
+              <div>
+                <p class="text-xs text-muted mb-0.5 uppercase font-medium">
+                  Telepon
+                </p>
+                <p class="text-highlighted">
+                  {{ profile?.phone ?? '-' }}
+                </p>
+              </div>
+              <div>
+                <p class="text-xs text-muted mb-0.5 uppercase font-medium">
+                  Tanggal Lahir
+                </p>
+                <p class="text-highlighted">
+                  {{ fmtDate(profile?.birth_date) }}
+                </p>
+              </div>
+              <div class="col-span-2">
+                <p class="text-xs text-muted mb-0.5 uppercase font-medium">
+                  Alamat
+                </p>
+                <p class="text-highlighted">
+                  {{ profile?.address ?? '-' }}
+                </p>
+              </div>
+              <div class="col-span-2">
+                <p class="text-xs text-muted mb-0.5 uppercase font-medium">
+                  Bio
+                </p>
+                <p class="text-highlighted leading-relaxed">
+                  {{ profile?.bio ?? '-' }}
+                </p>
+              </div>
+              <div class="col-span-2">
+                <p class="text-xs text-muted mb-0.5 uppercase font-medium">
+                  Website
+                </p>
+                <p class="text-highlighted break-all">
+                  {{ profile?.website ?? '-' }}
+                </p>
+              </div>
+            </div>
+          </template>
         </div>
 
         <USeparator />
 
         <!-- Instructor data -->
         <div>
-          <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-3">Data Penyuluh</p>
+          <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-3">
+            Data Penyuluh
+          </p>
           <div class="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
             <div>
-              <p class="text-xs text-muted mb-0.5 uppercase font-medium">ID Penyuluh</p>
-              <p class="text-highlighted font-mono text-xs">#{{ instructor.id }}</p>
+              <p class="text-xs text-muted mb-0.5 uppercase font-medium">
+                ID Penyuluh
+              </p>
+              <p class="text-highlighted font-mono text-xs">
+                #{{ instructor.id }}
+              </p>
             </div>
             <div>
-              <p class="text-xs text-muted mb-0.5 uppercase font-medium">Terdaftar</p>
-              <p class="text-highlighted">{{ fmtDate(instructor.created_at) }}</p>
+              <p class="text-xs text-muted mb-0.5 uppercase font-medium">
+                Terdaftar
+              </p>
+              <p class="text-highlighted">
+                {{ fmtDate(instructor.created_at) }}
+              </p>
             </div>
             <div>
-              <p class="text-xs text-muted mb-0.5 uppercase font-medium">Provinsi</p>
-              <p class="text-highlighted">{{ instructor.provinces ?? '-' }}</p>
+              <p class="text-xs text-muted mb-0.5 uppercase font-medium">
+                Provinsi
+              </p>
+              <p class="text-highlighted">
+                {{ instructor.provinces ?? '-' }}
+              </p>
             </div>
             <div>
-              <p class="text-xs text-muted mb-0.5 uppercase font-medium">Kabupaten/Kota</p>
-              <p class="text-highlighted">{{ instructor.district ?? '-' }}</p>
+              <p class="text-xs text-muted mb-0.5 uppercase font-medium">
+                Kabupaten/Kota
+              </p>
+              <p class="text-highlighted">
+                {{ instructor.district ?? '-' }}
+              </p>
             </div>
             <div class="col-span-2">
-              <p class="text-xs text-muted mb-0.5 uppercase font-medium">Catatan</p>
-              <p class="text-highlighted leading-relaxed">{{ instructor.note ?? '-' }}</p>
+              <p class="text-xs text-muted mb-0.5 uppercase font-medium">
+                Catatan
+              </p>
+              <p class="text-highlighted leading-relaxed">
+                {{ instructor.note ?? '-' }}
+              </p>
             </div>
           </div>
         </div>
@@ -114,14 +202,26 @@ const roleInfo = computed(() => {
 
       <div v-else class="flex flex-col items-center justify-center h-40 gap-3 text-center">
         <UIcon name="i-lucide-book-open" class="size-10 text-muted" />
-        <p class="text-muted text-sm">Pilih penyuluh untuk melihat detailnya</p>
+        <p class="text-muted text-sm">
+          Pilih penyuluh untuk melihat detailnya
+        </p>
       </div>
     </template>
 
     <template v-if="instructor" #footer>
       <div class="flex justify-end gap-2">
-        <UButton label="Tutup" color="neutral" variant="subtle" @click="open = false" />
-        <UButton label="Edit" icon="i-lucide-pencil" color="primary" @click="emit('edit', instructor!)" />
+        <UButton
+          label="Tutup"
+          color="neutral"
+          variant="subtle"
+          @click="open = false"
+        />
+        <UButton
+          label="Edit"
+          icon="i-lucide-pencil"
+          color="primary"
+          @click="emit('edit', instructor!)"
+        />
       </div>
     </template>
   </USlideover>

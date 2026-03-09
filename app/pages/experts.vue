@@ -9,7 +9,7 @@ type ExpertRow = Database['public']['Tables']['experts']['Row']
 type ProfileRow = Database['public']['Tables']['profiles']['Row']
 type CategoryExpert = Database['public']['Tables']['category_expert']['Row']
 type ExpertWithProfile = ExpertRow & {
-  profile: Pick<ProfileRow, 'id' | 'full_name' | 'username' | 'email' | 'avatar_url' | 'role' | 'phone' | 'bio' | 'address' | 'birth_date' | 'website'> | null
+  profile: Partial<ProfileRow> | null
 }
 
 const UBadge = resolveComponent('UBadge')
@@ -26,7 +26,9 @@ const table = useTemplateRef('table')
 
 // ─── Selection ────────────────────────────────────────────────────────────────
 const rowSelection = ref<Record<string, boolean>>({})
-const columnVisibility = ref<Record<string, boolean>>({})
+const columnVisibility = ref<Record<string, boolean>>({
+  user: true // selalu tampil
+})
 const selectedCount = computed(() => Object.values(rowSelection.value).filter(Boolean).length)
 
 function getSelectedRows(): ExpertWithProfile[] {
@@ -72,7 +74,7 @@ const { data: expertData, refresh, pending } = await useAsyncData('experts-list'
 
   let q = supabase
     .from('experts')
-    .select('*, profile:profiles(id, full_name, username, email, avatar_url, role, phone, bio, address, birth_date, website)', { count: 'exact' })
+    .select('id, user_id, category, note, deleted_at, created_at, updated_at, profile:profiles(id, full_name, username, email, avatar_url, phone)', { count: 'exact' })
     .order(field === 'name' ? 'created_at' : field, { ascending: dir === 'asc' })
 
   if (filterDeleted.value === 'true') {
@@ -208,17 +210,17 @@ const columns: TableColumn<ExpertWithProfile>[] = [
     enableHiding: false,
     header: ({ table: t }) =>
       h(UCheckbox, {
-        id: 'expert-select-all',
-        modelValue: t.getIsSomePageRowsSelected() ? 'indeterminate' : t.getIsAllPageRowsSelected(),
+        'id': 'expert-select-all',
+        'modelValue': t.getIsSomePageRowsSelected() ? 'indeterminate' : t.getIsAllPageRowsSelected(),
         'onUpdate:modelValue': (v: boolean | 'indeterminate') => t.toggleAllPageRowsSelected(!!v),
-        ariaLabel: 'Select all'
+        'ariaLabel': 'Select all'
       }),
     cell: ({ row }) =>
       h(UCheckbox, {
-        id: `expert-select-${row.id}`,
-        modelValue: row.getIsSelected(),
+        'id': `expert-select-${row.id}`,
+        'modelValue': row.getIsSelected(),
         'onUpdate:modelValue': (v: boolean | 'indeterminate') => row.toggleSelected(!!v),
-        ariaLabel: 'Select row'
+        'ariaLabel': 'Select row'
       })
   },
   {
@@ -291,7 +293,7 @@ const categoryOptions = computed(() =>
 const expertCsvQuery = computed(() => {
   let q = supabase
     .from('experts')
-    .select('*, profile:profiles(id, full_name, username, email, avatar_url, role, phone, bio, address, birth_date, website)')
+    .select('id, user_id, category, note, deleted_at, created_at, profile:profiles(id, full_name, username, email, phone)')
   if (filterDeleted.value === 'true') {
     q = q.not('deleted_at', 'is', null)
   } else {
@@ -365,8 +367,12 @@ const stats = computed(() => [
             <UIcon :name="stat.icon" class="size-5" :class="stat.color" />
           </div>
           <div>
-            <p class="text-2xl font-bold text-highlighted leading-none">{{ stat.count ?? 0 }}</p>
-            <p class="text-xs text-muted mt-0.5">{{ stat.label }}</p>
+            <p class="text-2xl font-bold text-highlighted leading-none">
+              {{ stat.count ?? 0 }}
+            </p>
+            <p class="text-xs text-muted mt-0.5">
+              {{ stat.label }}
+            </p>
           </div>
         </button>
       </div>
@@ -440,7 +446,7 @@ const stats = computed(() => [
           thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
           tbody: '[&>tr]:last:[&>td]:border-b-0',
           th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
-          td: 'border-b border-default',
+          td: 'border-b border-default'
         }"
       />
     </template>
@@ -486,7 +492,13 @@ const stats = computed(() => [
         @click="openDelete(getSelectedRows())"
       />
       <USeparator orientation="vertical" class="h-5" />
-      <UButton icon="i-lucide-x" size="sm" variant="ghost" color="neutral" @click="clearSelection" />
+      <UButton
+        icon="i-lucide-x"
+        size="sm"
+        variant="ghost"
+        color="neutral"
+        @click="clearSelection"
+      />
     </div>
   </Transition>
 

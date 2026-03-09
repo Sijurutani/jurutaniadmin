@@ -33,7 +33,10 @@ const table = useTemplateRef('table')
 
 // ─── Selection ────────────────────────────────────────────────────────────────
 const rowSelection = ref<Record<string, boolean>>({})
-const columnVisibility = ref<Record<string, boolean>>({})
+const columnVisibility = ref<Record<string, boolean>>({
+  cover: false,
+  author: false
+})
 const selectedCount = computed(() => Object.values(rowSelection.value).filter(Boolean).length)
 
 function getSelectedRows(): CourseRow[] {
@@ -57,14 +60,20 @@ const courses = ref<CourseRow[]>([])
 const coursesCount = ref(0)
 const pending = ref(false)
 
+// Select reaktif — JOIN author hanya saat kolom author ditampilkan
+const selectString = computed(() => {
+  const base = 'id, title, slug, cover_image, category, status, author_id, published_at, created_at, updated_at'
+  const authorJoin = columnVisibility.value.author !== false
+    ? ', author:profiles!learning_courses_author_id_fkey(id, full_name, username, avatar_url)'
+    : ''
+  return `${base}${authorJoin}`
+})
+
 async function fetchCourses() {
   const [field, dir] = sortValue.value.split('-') as [string, string]
   let q = supabase
     .from('learning_courses')
-    .select(
-      'id, title, slug, cover_image, category, status, author_id, published_at, created_at, updated_at, author:profiles!learning_courses_author_id_fkey(id, full_name, username, avatar_url)',
-      { count: 'exact' }
-    )
+    .select(selectString.value, { count: 'exact' })
     .is('deleted_at', null)
     .order(field, { ascending: dir === 'asc' })
 
@@ -87,6 +96,9 @@ watchDebounced([search, filterStatus, filterCategory], async () => {
   page.value = 1
   await fetchCourses()
 }, { debounce: 400, deep: true })
+
+// Refresh saat kolom author di-toggle (karena SELECT berubah)
+watch(() => columnVisibility.value.author, fetchCourses)
 
 // ─── Status update ────────────────────────────────────────────────────────────
 async function updateStatus(item: CourseRow, newStatus: string) {
@@ -199,7 +211,6 @@ const columns: TableColumn<CourseRow>[] = [
   {
     id: 'cover',
     header: '',
-    enableHiding: false,
     cell: ({ row }) =>
       h('div', { class: 'size-10 rounded-md overflow-hidden bg-muted flex items-center justify-center shrink-0' },
         row.original.cover_image

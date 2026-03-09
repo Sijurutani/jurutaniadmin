@@ -27,7 +27,10 @@ const table = useTemplateRef('table')
 
 // --- Selection ----------------------------------------------------------------
 const rowSelection = ref<Record<string, boolean>>({})
-const columnVisibility = ref<Record<string, boolean>>({})
+const columnVisibility = ref<Record<string, boolean>>({
+  full_name: false,
+  username: false
+})
 const selectedCount = computed(() => Object.values(rowSelection.value).filter(Boolean).length)
 
 function getSelectedRows(): ProfileRow[] {
@@ -53,7 +56,7 @@ const userQuery = computed(() => {
 
   let q = supabase
     .from('profiles')
-    .select('*', { count: 'exact' })
+    .select('id, full_name, username, email, avatar_url, role, created_at, deleted_at, archived_at', { count: 'exact' })
     .order(dbField, { ascending: dir === 'asc' })
 
   if (filterStatus.value === 'deleted') {

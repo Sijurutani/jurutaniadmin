@@ -24,7 +24,10 @@ const table = useTemplateRef('table')
 
 // ─── State ────────────────────────────────────────────────────────────────────
 const rowSelection = ref<Record<string, boolean>>({})
-const columnVisibility = ref<Record<string, boolean>>({})
+const columnVisibility = ref<Record<string, boolean>>({
+  thumbnail: false,
+  owner: false
+})
 
 // URL-persisted filter/sort/page/limit state
 const search = useRouteQuery<string | undefined>('search', undefined, { resetKeys: ['page'] })
@@ -57,12 +60,21 @@ const { data: categories } = await useAsyncData('market-categories', async () =>
   return (data ?? []) as CategoryMarket[]
 }, { default: () => [] as CategoryMarket[] })
 
+// Select reaktif — JOIN owner hanya saat kolom owner ditampilkan
+const selectString = computed(() => {
+  const base = 'id, name, excerpt, category, status, created_at, slug, seller, contact_seller, price, price_unit, price_range, thumbnail_url, images, attachments, published_at'
+  const ownerJoin = columnVisibility.value.owner !== false
+    ? ', owner:profiles(id, full_name, username, avatar_url)'
+    : ''
+  return `${base}${ownerJoin}`
+})
+
 const marketQuery = computed(() => {
   const [field, dir] = sortValue.value.split('-') as [string, string]
   const dbField = field === 'name' ? 'name' : field
   let q = supabase
     .from('product_markets')
-    .select('*, owner:profiles(id, full_name, username, avatar_url)', { count: 'exact' })
+    .select(selectString.value, { count: 'exact' })
     .is('deleted_at', null)
     // rejected & deleted always last (DB-level, cross-page)
     .order('status_depriority' as any, { ascending: true })
@@ -88,6 +100,11 @@ watchDebounced([search, filterCategory, filterStatus], async () => {
   page.value = 1
   await refresh()
 }, { debounce: 400, deep: true })
+
+// Refresh saat kolom owner di-toggle (karena SELECT berubah)
+watch(() => columnVisibility.value.owner, async () => {
+  await refresh()
+})
 
 // ─── Status actions ───────────────────────────────────────────────────────────
 async function updateStatus(item: MarketRow, newStatus: string) {

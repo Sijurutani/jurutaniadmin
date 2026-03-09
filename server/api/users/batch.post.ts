@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { serverSupabaseServiceRole } from '#supabase/server'
 import { z } from 'zod'
 import type { Database } from '~/types/database.types'
 
@@ -21,25 +21,30 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Invalid request body' })
   }
 
-  const config = useRuntimeConfig()
-  const admin = createClient<Database>(config.public.supabaseUrl, config.supabaseServiceKey, {
-    auth: { persistSession: false, autoRefreshToken: false }
+  const admin = serverSupabaseServiceRole<Database>(event)
+  const ids = parsed.data.ids
+
+  // Satu call listUsers — lebih efisien dari N individual getUserById calls
+  const { data, error } = await admin.auth.admin.listUsers({
+    page: 1,
+    perPage: 200
   })
 
-  const results = await Promise.all(
-    parsed.data.ids.map(id => admin.auth.admin.getUserById(id))
-  )
+  if (error) {
+    throw createError({ statusCode: 500, statusMessage: error.message })
+  }
 
+  const idSet = new Set(ids)
   const map: Record<string, BatchAuthUser> = {}
-  for (const { data } of results) {
-    if (!data?.user) continue
-    const u = data.user
+
+  for (const u of data.users) {
+    if (!idSet.has(u.id)) continue
     map[u.id] = {
       display_name: u.user_metadata?.full_name ?? u.user_metadata?.name ?? u.user_metadata?.display_name ?? null,
       email: u.email ?? null,
       email_confirmed: !!u.email_confirmed_at,
       last_sign_in_at: u.last_sign_in_at ?? null,
-      banned_until: (u as any).banned_until ?? null
+      banned_until: (u as { banned_until?: string }).banned_until ?? null
     }
   }
 

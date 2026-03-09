@@ -6,7 +6,7 @@ import type { Database } from '~/types/database.types'
 type InstructorRow = Database['public']['Tables']['instructors']['Row']
 type ProfileRow = Database['public']['Tables']['profiles']['Row']
 type InstructorWithProfile = InstructorRow & {
-  profile: Pick<ProfileRow, 'id' | 'full_name' | 'username' | 'email' | 'avatar_url' | 'role' | 'phone' | 'bio' | 'address' | 'birth_date' | 'website'> | null
+  profile: Partial<ProfileRow> | null
 }
 
 const props = defineProps<{ instructor: InstructorWithProfile | null }>()
@@ -50,10 +50,16 @@ const isFormInit = ref(false)
 watch([() => props.instructor, open], async ([inst, isOpen]) => {
   if (isOpen && inst) {
     isFormInit.value = true
-    state.full_name = inst.profile?.full_name ?? ''
-    state.phone = inst.profile?.phone ?? ''
-    state.address = inst.profile?.address ?? ''
-    state.bio = inst.profile?.bio ?? ''
+    // Fetch profil terkini agar form selalu terisi dengan data aktual
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, phone, address, bio')
+      .eq('id', inst.user_id)
+      .single()
+    state.full_name = profile?.full_name ?? inst.profile?.full_name ?? ''
+    state.phone = profile?.phone ?? inst.profile?.phone ?? ''
+    state.address = profile?.address ?? inst.profile?.address ?? ''
+    state.bio = profile?.bio ?? inst.profile?.bio ?? ''
     state.provinces = inst.provinces ?? ''
     state.district = inst.district ?? ''
     state.note = inst.note ?? ''

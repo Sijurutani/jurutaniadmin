@@ -7,7 +7,7 @@ type ExpertRow = Database['public']['Tables']['experts']['Row']
 type ProfileRow = Database['public']['Tables']['profiles']['Row']
 type CategoryExpert = Database['public']['Tables']['category_expert']['Row']
 export type ExpertWithProfile = ExpertRow & {
-  profile: Pick<ProfileRow, 'id' | 'full_name' | 'username' | 'email' | 'avatar_url' | 'role' | 'phone' | 'bio' | 'address' | 'birth_date' | 'website'> | null
+  profile: Partial<ProfileRow> | null
 }
 
 const props = defineProps<{
@@ -18,13 +18,37 @@ const props = defineProps<{
 const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{ edit: [expert: ExpertWithProfile] }>()
 
-function fmtDate(d: string | null) {
+const supabase = useSupabaseClient()
+
+// Fetch profil lengkap saat slideover dibuka
+const fullProfile = ref<Partial<ProfileRow> | null>(null)
+const loadingProfile = ref(false)
+
+watch(open, async (isOpen) => {
+  if (!isOpen || !props.expert?.user_id) {
+    fullProfile.value = null
+    return
+  }
+  loadingProfile.value = true
+  const { data } = await supabase
+    .from('profiles')
+    .select('id, full_name, username, email, avatar_url, role, phone, bio, address, birth_date, website')
+    .eq('id', props.expert.user_id)
+    .single()
+  fullProfile.value = data
+  loadingProfile.value = false
+})
+
+// Gunakan fullProfile jika ada, fallback ke props.expert.profile
+const profile = computed(() => fullProfile.value ?? props.expert?.profile ?? null)
+
+function fmtDate(d: string | null | undefined) {
   if (!d) return '-'
   return format(new Date(d), 'dd MMM yyyy', { locale: localeId })
 }
 
 const roleInfo = computed(() => {
-  const role = props.expert?.profile?.role
+  const role = profile.value?.role
   if (!role) return null
   return Enum.UserRole.find(r => r.value === role) ?? null
 })
@@ -47,8 +71,8 @@ const categoryLabel = computed(() => {
             size="xl"
           />
           <div class="text-center">
-            <p class="text-lg font-semibold text-highlighted">{{ expert.profile?.full_name ?? '-' }}</p>
-            <p class="text-sm text-muted">@{{ expert.profile?.username ?? '-' }}</p>
+            <p class="text-lg font-semibold text-highlighted">{{ profile?.full_name ?? '-' }}</p>
+            <p class="text-sm text-muted">@{{ profile?.username ?? '-' }}</p>
           </div>
           <div class="flex items-center gap-2 flex-wrap justify-center">
             <UBadge v-if="roleInfo" :color="roleInfo.color as any" variant="soft" :leading-icon="roleInfo.icon">
@@ -62,33 +86,38 @@ const categoryLabel = computed(() => {
 
         <!-- Profile data -->
         <div>
-          <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-3">Data Profil</p>
-          <div class="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
-            <div class="col-span-2">
-              <p class="text-xs text-muted mb-0.5 uppercase font-medium">Email</p>
-              <p class="text-highlighted break-all">{{ expert.profile?.email ?? '-' }}</p>
-            </div>
-            <div>
-              <p class="text-xs text-muted mb-0.5 uppercase font-medium">Telepon</p>
-              <p class="text-highlighted">{{ expert.profile?.phone ?? '-' }}</p>
-            </div>
-            <div>
-              <p class="text-xs text-muted mb-0.5 uppercase font-medium">Tanggal Lahir</p>
-              <p class="text-highlighted">{{ fmtDate(expert.profile?.birth_date ?? null) }}</p>
-            </div>
-            <div class="col-span-2">
-              <p class="text-xs text-muted mb-0.5 uppercase font-medium">Alamat</p>
-              <p class="text-highlighted">{{ expert.profile?.address ?? '-' }}</p>
-            </div>
-            <div class="col-span-2">
-              <p class="text-xs text-muted mb-0.5 uppercase font-medium">Bio</p>
-              <p class="text-highlighted leading-relaxed">{{ expert.profile?.bio ?? '-' }}</p>
-            </div>
-            <div class="col-span-2">
-              <p class="text-xs text-muted mb-0.5 uppercase font-medium">Website</p>
-              <p class="text-highlighted break-all">{{ expert.profile?.website ?? '-' }}</p>
-            </div>
+          <div v-if="loadingProfile" class="flex justify-center py-6">
+            <UIcon name="i-lucide-loader-circle" class="size-5 text-muted animate-spin" />
           </div>
+          <template v-else>
+            <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-3">Data Profil</p>
+            <div class="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
+              <div class="col-span-2">
+                <p class="text-xs text-muted mb-0.5 uppercase font-medium">Email</p>
+                <p class="text-highlighted break-all">{{ profile?.email ?? '-' }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-muted mb-0.5 uppercase font-medium">Telepon</p>
+                <p class="text-highlighted">{{ profile?.phone ?? '-' }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-muted mb-0.5 uppercase font-medium">Tanggal Lahir</p>
+                <p class="text-highlighted">{{ fmtDate(profile?.birth_date) }}</p>
+              </div>
+              <div class="col-span-2">
+                <p class="text-xs text-muted mb-0.5 uppercase font-medium">Alamat</p>
+                <p class="text-highlighted">{{ profile?.address ?? '-' }}</p>
+              </div>
+              <div class="col-span-2">
+                <p class="text-xs text-muted mb-0.5 uppercase font-medium">Bio</p>
+                <p class="text-highlighted leading-relaxed">{{ profile?.bio ?? '-' }}</p>
+              </div>
+              <div class="col-span-2">
+                <p class="text-xs text-muted mb-0.5 uppercase font-medium">Website</p>
+                <p class="text-highlighted break-all">{{ profile?.website ?? '-' }}</p>
+              </div>
+            </div>
+          </template>
         </div>
 
         <USeparator />
