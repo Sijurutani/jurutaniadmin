@@ -214,8 +214,6 @@ function getEmbedHeight(platform: string): string {
 
     <template #body>
       <div class="grid lg:grid-cols-[280px_1fr] gap-0 h-full min-h-[calc(100vh-8rem)]">
-
-        <!-- ── Left: Lesson List ──────────────────────────────────────── -->
         <div class="border-r border-default flex flex-col">
           <div class="p-3 border-b border-default">
             <span class="text-sm font-semibold text-highlighted">
@@ -232,7 +230,9 @@ function getEmbedHeight(platform: string): string {
             class="flex-1 flex flex-col items-center justify-center gap-2 p-6 text-center"
           >
             <UIcon name="i-lucide-layers" class="size-8 text-muted" />
-            <p class="text-sm text-muted">Belum ada lesson.</p>
+            <p class="text-sm text-muted">
+              Belum ada lesson.
+            </p>
           </div>
 
           <div v-else class="flex-1 p-2 space-y-1 overflow-y-auto">
@@ -272,15 +272,18 @@ function getEmbedHeight(platform: string): string {
 
         <!-- ── Right: Lesson Content Viewer ──────────────────────────── -->
         <div class="flex flex-col overflow-y-auto">
-
           <!-- Empty state -->
           <div
             v-if="!activeLesson && !loadingLesson"
             class="flex-1 flex flex-col items-center justify-center gap-3 text-center p-8"
           >
             <UIcon name="i-lucide-mouse-pointer-click" class="size-10 text-muted" />
-            <p class="text-base font-medium text-highlighted">Pilih lesson untuk melihat preview</p>
-            <p class="text-sm text-muted">Klik lesson di sebelah kiri.</p>
+            <p class="text-base font-medium text-highlighted">
+              Pilih lesson untuk melihat preview
+            </p>
+            <p class="text-sm text-muted">
+              Klik lesson di sebelah kiri.
+            </p>
           </div>
 
           <!-- Loading -->
@@ -293,7 +296,6 @@ function getEmbedHeight(platform: string): string {
 
           <!-- Content viewer -->
           <div v-else-if="activeLesson" :key="activeLesson.id" class="flex-1 p-4 lg:p-8 space-y-8 max-w-4xl w-full mx-auto">
-
             <!-- ── Header ─────────────────────────────────────────────── -->
             <div class="space-y-2 pb-4 border-b border-default">
               <div class="flex items-center gap-2 flex-wrap">
@@ -308,13 +310,19 @@ function getEmbedHeight(platform: string): string {
                   Aktif sejak {{ new Date(activeLesson.published_at).toLocaleDateString('id-ID') }}
                 </span>
               </div>
-              <h1 class="text-2xl font-bold text-highlighted">{{ activeLesson.title }}</h1>
-              <p class="text-xs text-muted font-mono">{{ activeLesson.slug }}</p>
+              <h1 class="text-2xl font-bold text-highlighted">
+                {{ activeLesson.title }}
+              </h1>
+              <p class="text-xs text-muted font-mono">
+                {{ activeLesson.slug }}
+              </p>
             </div>
 
             <!-- ── Materi / Rich Text ──────────────────────────────────── -->
             <div>
-              <h2 class="text-sm font-semibold text-muted uppercase tracking-wide mb-3">Materi</h2>
+              <h2 class="text-sm font-semibold text-muted uppercase tracking-wide mb-3">
+                Materi
+              </h2>
               <div
                 v-if="activeLesson.content"
                 class="rounded-xl border border-default bg-default overflow-hidden"
@@ -328,7 +336,9 @@ function getEmbedHeight(platform: string): string {
               </div>
               <div v-else class="rounded-xl border border-dashed border-default py-10 text-center">
                 <UIcon name="i-lucide-file-text" class="size-8 text-muted mb-2" />
-                <p class="text-sm text-muted">Belum ada konten materi untuk lesson ini.</p>
+                <p class="text-sm text-muted">
+                  Belum ada konten materi untuk lesson ini.
+                </p>
               </div>
             </div>
 
@@ -383,7 +393,9 @@ function getEmbedHeight(platform: string): string {
                   <div v-else class="px-4 py-6 flex items-center gap-3">
                     <UIcon name="i-lucide-link" class="size-5 text-muted shrink-0" />
                     <div class="flex-1 min-w-0">
-                      <p class="text-sm text-muted mb-1">Konten ini tidak dapat ditampilkan langsung.</p>
+                      <p class="text-sm text-muted mb-1">
+                        Konten ini tidak dapat ditampilkan langsung.
+                      </p>
                       <a
                         :href="embed.url"
                         target="_blank"

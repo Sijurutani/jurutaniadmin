@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import type { FormSubmitEvent, EditorSuggestionMenuItem } from '@nuxt/ui'
-import { createImageUploadExtension } from '~/components/news/EditorImageUploadExtension'
+import type { FormSubmitEvent } from '@nuxt/ui'
 import type { Database } from '~/types/database.types'
 
 type MarketRow = Database['public']['Tables']['product_markets']['Row']
-type CategoryMarket = Database['public']['Tables']['category_markets']['Row']
 
 useHead({ title: 'Edit Produk – Jurutani Admin' })
 
@@ -50,7 +48,7 @@ const form = reactive<Schema>({
 
 const content = ref<Record<string, any> | null>(null)
 const originalData = ref<MarketRow | null>(null)
-const categories = ref<CategoryMarket[]>([])
+
 const pending = ref(true)
 const saving = ref(false)
 const uploading = ref(false)
@@ -195,16 +193,6 @@ async function loadMarket() {
   pending.value = false
 }
 
-// ─── Categories ───────────────────────────────────────────────────────────────
-async function fetchCategories() {
-  const { data } = await supabase
-    .from('category_markets')
-    .select('*')
-    .is('deleted_at', null)
-    .order('name')
-  categories.value = data ?? []
-}
-
 // ─── Slug ─────────────────────────────────────────────────────────────────────
 const slugEdited = ref<boolean>(false)
 function onNameInput() {
@@ -287,76 +275,23 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
   }
 }
 
-// ─── Editor ───────────────────────────────────────────────────────────────────
-const editorExtensions = [createImageUploadExtension(marketId)] as any[]
-
-const editorHandlers = {
-  imageUpload: {
-    canExecute: (editor: any) => editor.can().insertContent({ type: 'imageUpload' }),
-    execute: (editor: any) => editor.chain().focus().insertContent({ type: 'imageUpload' }),
-    isActive: (editor: any) => editor.isActive('imageUpload'),
-    isDisabled: undefined
-  }
-}
-
-const toolbarItems = [
-  [{ kind: 'imageUpload', icon: 'i-lucide-image', label: 'Upload Gambar', variant: 'soft' as const }],
-  [{
-    icon: 'i-lucide-heading',
-    content: { align: 'start' as const },
-    items: [
-      { kind: 'heading', level: 1, icon: 'i-lucide-heading-1', label: 'Heading 1' },
-      { kind: 'heading', level: 2, icon: 'i-lucide-heading-2', label: 'Heading 2' },
-      { kind: 'heading', level: 3, icon: 'i-lucide-heading-3', label: 'Heading 3' }
-    ]
-  }],
-  [
-    { kind: 'mark', mark: 'bold', icon: 'i-lucide-bold' },
-    { kind: 'mark', mark: 'italic', icon: 'i-lucide-italic' },
-    { kind: 'mark', mark: 'underline', icon: 'i-lucide-underline' },
-    { kind: 'mark', mark: 'strike', icon: 'i-lucide-strikethrough' }
-  ],
-  [
-    { kind: 'bulletList', icon: 'i-lucide-list' },
-    { kind: 'orderedList', icon: 'i-lucide-list-ordered' },
-    { kind: 'blockquote', icon: 'i-lucide-quote' },
-    { kind: 'horizontalRule', icon: 'i-lucide-separator-horizontal' }
-  ],
-  [{ kind: 'link', icon: 'i-lucide-link' }],
-  [
-    { kind: 'undo', icon: 'i-lucide-undo-2' },
-    { kind: 'redo', icon: 'i-lucide-redo-2' }
-  ]
-] as any[][]
-
-const suggestionItems: EditorSuggestionMenuItem[][] = [
-  [
-    { type: 'label', label: 'Teks' },
-    { kind: 'paragraph', label: 'Paragraf', icon: 'i-lucide-type' },
-    { kind: 'heading', level: 1, label: 'Heading 1', icon: 'i-lucide-heading-1' },
-    { kind: 'heading', level: 2, label: 'Heading 2', icon: 'i-lucide-heading-2' },
-    { kind: 'heading', level: 3, label: 'Heading 3', icon: 'i-lucide-heading-3' }
-  ],
-  [
-    { type: 'label', label: 'List' },
-    { kind: 'bulletList', label: 'Bullet List', icon: 'i-lucide-list' },
-    { kind: 'orderedList', label: 'Numbered List', icon: 'i-lucide-list-ordered' }
-  ],
-  [
-    { type: 'label', label: 'Insert' },
-    { kind: 'blockquote', label: 'Blockquote', icon: 'i-lucide-text-quote' },
-    { kind: 'horizontalRule', label: 'Divider', icon: 'i-lucide-separator-horizontal' }
-  ]
-]
+// ─── Categories ───────────────────────────────────────────────────────────────
+const { data: categories } = await useAsyncData('market-categories', async () => {
+  const { data } = await supabase
+    .from('category_markets')
+    .select('*')
+    .is('deleted_at', null)
+    .order('name')
+  return data ?? []
+}, { default: () => [] })
 
 const categoryItems = computed(() =>
-  categories.value.map(c => ({ label: c.name, value: c.value }))
+  (categories.value ?? []).map((c: { name: string, value: string }) => ({ label: c.name, value: c.value }))
 )
 
 const statusItems = Enum.StatusMarkets.map(s => ({ label: s.label, value: s.value }))
 
 onMounted(() => {
-  fetchCategories()
   loadMarket()
 })
 </script>
@@ -457,24 +392,11 @@ onMounted(() => {
 
             <!-- Rich content -->
             <UPageCard title="Deskripsi Produk">
-              <div class="border border-muted rounded-lg overflow-hidden min-h-96">
-                <UEditor
-                  v-slot="{ editor }"
-                  v-model="content"
-                  content-type="json"
-                  :extensions="editorExtensions"
-                  :handlers="(editorHandlers as any)"
-                  placeholder="Tulis deskripsi produk secara lengkap..."
-                  class="min-h-80"
-                >
-                  <UEditorToolbar
-                    :editor="editor"
-                    :items="(toolbarItems as any)"
-                    class="border-b border-muted py-1.5 px-2 overflow-x-auto"
-                  />
-                  <UEditorSuggestionMenu :editor="editor" :items="suggestionItems" />
-                </UEditor>
-              </div>
+              <EditorRichEditor
+                v-model="content"
+                :news-id="marketId"
+                placeholder="Tulis deskripsi produk secara lengkap..."
+              />
             </UPageCard>
 
             <!-- Seller info -->

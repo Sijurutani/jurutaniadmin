@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 useHead({ title: 'Contents - Jurutani Admin' })
 
 type Tab = 'carousel' | 'banner'

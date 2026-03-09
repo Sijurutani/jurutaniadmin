@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import type { FormSubmitEvent, EditorSuggestionMenuItem } from '@nuxt/ui'
+import type { FormSubmitEvent } from '@nuxt/ui'
 
 useHead({ title: 'Buat Course – Jurutani Admin' })
 
 const supabase = useSupabaseClient()
+const authStore = useAuthStore()
 const toast = useToast()
 const router = useRouter()
 
@@ -83,7 +84,7 @@ watch(coverFile, (file) => {
 async function onSubmit(event: FormSubmitEvent<Schema>) {
   saving.value = true
   try {
-    const { data: { user } } = await supabase.auth.getUser()
+    const author_id = authStore.profile?.id ?? null
 
     // Pre-generate ID so we can upload cover with it
     const tempId = crypto.randomUUID()
@@ -106,7 +107,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         status: event.data.status,
         description: description.value ?? {},
         cover_image: coverUrl,
-        author_id: user?.id ?? null,
+        author_id,
         published_at
       })
       .select('id')
@@ -123,56 +124,6 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     saving.value = false
   }
 }
-
-// ─── Editor ───────────────────────────────────────────────────────────────────
-const toolbarItems = [
-  [{
-    icon: 'i-lucide-heading',
-    content: { align: 'start' as const },
-    items: [
-      { kind: 'heading', level: 1, icon: 'i-lucide-heading-1', label: 'Heading 1' },
-      { kind: 'heading', level: 2, icon: 'i-lucide-heading-2', label: 'Heading 2' },
-      { kind: 'heading', level: 3, icon: 'i-lucide-heading-3', label: 'Heading 3' }
-    ]
-  }],
-  [
-    { kind: 'mark', mark: 'bold', icon: 'i-lucide-bold' },
-    { kind: 'mark', mark: 'italic', icon: 'i-lucide-italic' },
-    { kind: 'mark', mark: 'underline', icon: 'i-lucide-underline' },
-    { kind: 'mark', mark: 'strike', icon: 'i-lucide-strikethrough' }
-  ],
-  [
-    { kind: 'bulletList', icon: 'i-lucide-list' },
-    { kind: 'orderedList', icon: 'i-lucide-list-ordered' },
-    { kind: 'blockquote', icon: 'i-lucide-quote' },
-    { kind: 'horizontalRule', icon: 'i-lucide-separator-horizontal' }
-  ],
-  [
-    { kind: 'undo', icon: 'i-lucide-undo-2' },
-    { kind: 'redo', icon: 'i-lucide-redo-2' }
-  ]
-] as any[][]
-
-const suggestionItems: EditorSuggestionMenuItem[][] = [
-  [
-    { type: 'label', label: 'Teks' },
-    { kind: 'paragraph', label: 'Paragraf', icon: 'i-lucide-type' },
-    { kind: 'heading', level: 1, label: 'Heading 1', icon: 'i-lucide-heading-1' },
-    { kind: 'heading', level: 2, label: 'Heading 2', icon: 'i-lucide-heading-2' },
-    { kind: 'heading', level: 3, label: 'Heading 3', icon: 'i-lucide-heading-3' }
-  ],
-  [
-    { type: 'label', label: 'List' },
-    { kind: 'bulletList', label: 'Bullet List', icon: 'i-lucide-list' },
-    { kind: 'orderedList', label: 'Numbered List', icon: 'i-lucide-list-ordered' }
-  ],
-  [
-    { type: 'label', label: 'Insert' },
-    { kind: 'blockquote', label: 'Blockquote', icon: 'i-lucide-text-quote' },
-    { kind: 'codeBlock', label: 'Code Block', icon: 'i-lucide-square-code' },
-    { kind: 'horizontalRule', label: 'Divider', icon: 'i-lucide-separator-horizontal' }
-  ]
-]
 
 const categoryItems = Enum.CourseCategories.map(c => ({ label: c.label, value: c.value }))
 </script>
@@ -197,7 +148,12 @@ const categoryItems = Enum.CourseCategories.map(c => ({ label: c.label, value: c
     </template>
 
     <template #body>
-      <UForm :schema="schema" :state="form" class="h-full" @submit="onSubmit">
+      <UForm
+        :schema="schema"
+        :state="form"
+        class="h-full"
+        @submit="onSubmit"
+      >
         <div class="grid lg:grid-cols-3 gap-6">
           <!-- ── Main column ──────────────────────────────────────────── -->
           <div class="lg:col-span-2 space-y-6">
@@ -240,22 +196,10 @@ const categoryItems = Enum.CourseCategories.map(c => ({ label: c.label, value: c
 
             <!-- Description editor -->
             <UPageCard title="Deskripsi" description="Pengantar dan overview course untuk calon peserta.">
-              <div class="border border-muted rounded-lg overflow-hidden min-h-64">
-                <UEditor
-                  v-slot="{ editor }"
-                  v-model="description"
-                  content-type="json"
-                  placeholder="Tuliskan deskripsi course, tujuan pembelajaran, dan siapa yang cocok mengikuti course ini..."
-                  class="min-h-60"
-                >
-                  <UEditorToolbar
-                    :editor="editor"
-                    :items="(toolbarItems as any)"
-                    class="border-b border-muted py-1.5 px-2 overflow-x-auto"
-                  />
-                  <UEditorSuggestionMenu :editor="editor" :items="suggestionItems" />
-                </UEditor>
-              </div>
+              <EditorRichEditor
+                v-model="description"
+                placeholder="Tuliskan deskripsi course, tujuan pembelajaran, dan siapa yang cocok mengikuti course ini..."
+              />
             </UPageCard>
 
             <!-- Cover image -->

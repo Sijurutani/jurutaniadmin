@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { format } from 'date-fns'
 import type { TableColumn } from '@nuxt/ui'
 import type { Row } from '@tanstack/table-core'
@@ -25,7 +25,7 @@ const supabase = useSupabaseClient()
 const toast = useToast()
 const table = useTemplateRef('table')
 
-// ─── Selection ────────────────────────────────────────────────────────────────
+// --- Selection ----------------------------------------------------------------
 const rowSelection = ref<Record<string, boolean>>({})
 const columnVisibility = ref<Record<string, boolean>>({})
 const selectedCount = computed(() => Object.values(rowSelection.value).filter(Boolean).length)
@@ -38,7 +38,7 @@ function getSelectedRows(): ProfileRow[] {
 
 function clearSelection() { rowSelection.value = {} }
 
-// ─── Filters ──────────────────────────────────────────────────────────────────
+// --- Filters ------------------------------------------------------------------
 const search = useRouteQuery<string | undefined>('search', undefined, { resetKeys: ['page'] })
 const filterRole = useRouteQuery('role', [] as string[], { resetKeys: ['page'] })
 const filterStatus = useRouteQuery('status', 'active', { resetKeys: ['page'] })
@@ -46,7 +46,7 @@ const sortValue = useRouteQuery('sort', 'created_at-desc', { resetKeys: ['page']
 const page = useRouteQuery('page', 1)
 const limit = useRouteQuery('limit', 15, { resetKeys: ['page'] })
 
-// ─── Profiles query ───────────────────────────────────────────────────────────
+// --- Profiles query -----------------------------------------------------------
 const userQuery = computed(() => {
   const [field, dir] = sortValue.value.split('-') as [string, string]
   const dbField = field === 'name' ? 'full_name' : field
@@ -86,7 +86,7 @@ watchDebounced([search, filterRole, filterStatus], async () => {
   await refresh()
 }, { debounce: 400, deep: true })
 
-// ─── Auth batch data ──────────────────────────────────────────────────────────
+// --- Auth batch data ----------------------------------------------------------
 const authMap = ref<Record<string, AuthInfo>>({})
 
 watch(userData, async (val) => {
@@ -101,7 +101,7 @@ watch(userData, async (val) => {
   } catch { /* silent */ }
 }, { immediate: true })
 
-// ─── Stats ────────────────────────────────────────────────────────────────────
+// --- Stats --------------------------------------------------------------------
 const { data: statsData } = await useAsyncData('user-stats', async () => {
   const [active, archived, deleted] = await Promise.all([
     supabase.from('profiles').select('id', { count: 'exact', head: true }).is('deleted_at', null).is('archived_at', null),
@@ -111,7 +111,7 @@ const { data: statsData } = await useAsyncData('user-stats', async () => {
   return { active: active.count ?? 0, archived: archived.count ?? 0, deleted: deleted.count ?? 0 }
 }, { default: () => ({ active: 0, archived: 0, deleted: 0 }) })
 
-// ─── Per-row actions ──────────────────────────────────────────────────────────
+// --- Per-row actions ----------------------------------------------------------
 async function softDeleteUser(user: ProfileRow) {
   const { error } = await supabase.from('profiles')
     .update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
@@ -139,7 +139,7 @@ async function archiveUser(user: ProfileRow) {
   await refresh()
 }
 
-// ─── Bulk actions ─────────────────────────────────────────────────────────────
+// --- Bulk actions -------------------------------------------------------------
 const bulkLoading = ref(false)
 
 async function bulkArchive() {
@@ -173,7 +173,7 @@ async function bulkSoftDelete() {
   await refresh()
 }
 
-// ─── Row actions menu ─────────────────────────────────────────────────────────
+// --- Row actions menu ---------------------------------------------------------
 function rowActions(item: ProfileRow) {
   const isDeleted = !!item.deleted_at
   const isArchived = !isDeleted && !!item.archived_at
@@ -197,7 +197,7 @@ function rowActions(item: ProfileRow) {
   ]
 }
 
-// ─── Table columns ────────────────────────────────────────────────────────────
+// --- Table columns ------------------------------------------------------------
 const columns: TableColumn<ProfileRow>[] = [
   {
     id: 'select',
@@ -223,7 +223,7 @@ const columns: TableColumn<ProfileRow>[] = [
     cell: ({ row }) => {
       const u = row.original
       const auth = authMap.value[u.id]
-      const displayName = auth?.display_name ?? u.full_name ?? u.username ?? '—'
+      const displayName = auth?.display_name ?? u.full_name ?? u.username ?? '�'
       const email = auth?.email ?? u.email ?? ''
       return h('div', { class: 'flex items-center gap-3' }, [
         h(UAvatar, { src: u.avatar_url ?? undefined, alt: displayName, size: 'sm' }),
@@ -239,20 +239,20 @@ const columns: TableColumn<ProfileRow>[] = [
     header: 'Username',
     cell: ({ row }) =>
       h('span', { class: 'text-sm text-muted font-mono' },
-        row.original.username ? `@${row.original.username}` : '—')
+        row.original.username ? `@${row.original.username}` : '�')
   },
   {
     accessorKey: 'full_name',
     header: 'Full Name',
     cell: ({ row }) =>
-      h('span', { class: 'text-sm text-highlighted' }, row.original.full_name ?? '—')
+      h('span', { class: 'text-sm text-highlighted' }, row.original.full_name ?? '�')
   },
   {
     accessorKey: 'role',
     header: 'Role',
     cell: ({ row }) => {
       const r = Enum.UserRole.find(x => x.value === row.original.role)
-      if (!r) return h('span', { class: 'text-muted text-sm' }, '—')
+      if (!r) return h('span', { class: 'text-muted text-sm' }, '�')
       return h(UBadge, { color: r.color as any, variant: 'soft', leadingIcon: r.icon, class: 'capitalize' }, () => r.label)
     }
   },

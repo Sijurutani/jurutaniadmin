@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import type { FormSubmitEvent, EditorSuggestionMenuItem } from '@nuxt/ui'
+import type { FormSubmitEvent } from '@nuxt/ui'
 
 const route = useRoute()
 const courseId = route.params.id as string
@@ -9,7 +9,6 @@ useHead({ title: 'Edit Course – Jurutani Admin' })
 
 const supabase = useSupabaseClient()
 const toast = useToast()
-const router = useRouter()
 
 const DRAFT_KEY = `course_draft_${courseId}`
 
@@ -155,57 +154,6 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     saving.value = false
   }
 }
-
-// ─── Editor ───────────────────────────────────────────────────────────────────
-const toolbarItems = [
-  [{
-    icon: 'i-lucide-heading',
-    content: { align: 'start' as const },
-    items: [
-      { kind: 'heading', level: 1, icon: 'i-lucide-heading-1', label: 'Heading 1' },
-      { kind: 'heading', level: 2, icon: 'i-lucide-heading-2', label: 'Heading 2' },
-      { kind: 'heading', level: 3, icon: 'i-lucide-heading-3', label: 'Heading 3' }
-    ]
-  }],
-  [
-    { kind: 'mark', mark: 'bold', icon: 'i-lucide-bold' },
-    { kind: 'mark', mark: 'italic', icon: 'i-lucide-italic' },
-    { kind: 'mark', mark: 'underline', icon: 'i-lucide-underline' },
-    { kind: 'mark', mark: 'strike', icon: 'i-lucide-strikethrough' }
-  ],
-  [
-    { kind: 'bulletList', icon: 'i-lucide-list' },
-    { kind: 'orderedList', icon: 'i-lucide-list-ordered' },
-    { kind: 'blockquote', icon: 'i-lucide-quote' },
-    { kind: 'horizontalRule', icon: 'i-lucide-separator-horizontal' }
-  ],
-  [
-    { kind: 'undo', icon: 'i-lucide-undo-2' },
-    { kind: 'redo', icon: 'i-lucide-redo-2' }
-  ]
-] as any[][]
-
-const suggestionItems: EditorSuggestionMenuItem[][] = [
-  [
-    { type: 'label', label: 'Teks' },
-    { kind: 'paragraph', label: 'Paragraf', icon: 'i-lucide-type' },
-    { kind: 'heading', level: 1, label: 'Heading 1', icon: 'i-lucide-heading-1' },
-    { kind: 'heading', level: 2, label: 'Heading 2', icon: 'i-lucide-heading-2' },
-    { kind: 'heading', level: 3, label: 'Heading 3', icon: 'i-lucide-heading-3' }
-  ],
-  [
-    { type: 'label', label: 'List' },
-    { kind: 'bulletList', label: 'Bullet List', icon: 'i-lucide-list' },
-    { kind: 'orderedList', label: 'Numbered List', icon: 'i-lucide-list-ordered' }
-  ],
-  [
-    { type: 'label', label: 'Insert' },
-    { kind: 'blockquote', label: 'Blockquote', icon: 'i-lucide-text-quote' },
-    { kind: 'codeBlock', label: 'Code Block', icon: 'i-lucide-square-code' },
-    { kind: 'horizontalRule', label: 'Divider', icon: 'i-lucide-separator-horizontal' }
-  ]
-]
-
 const categoryItems = Enum.CourseCategories.map(c => ({ label: c.label, value: c.value }))
 const displayCoverUrl = computed(() => coverPreview.value ?? getCoursePublicUrl(existingCoverUrl.value))
 </script>
@@ -230,7 +178,12 @@ const displayCoverUrl = computed(() => coverPreview.value ?? getCoursePublicUrl(
     </template>
 
     <template #body>
-      <UForm :schema="schema" :state="form" class="h-full" @submit="onSubmit">
+      <UForm
+        :schema="schema"
+        :state="form"
+        class="h-full"
+        @submit="onSubmit"
+      >
         <div class="grid lg:grid-cols-3 gap-6">
           <!-- ── Main column ──────────────────────────────────────────── -->
           <div class="lg:col-span-2 space-y-6">
@@ -271,22 +224,10 @@ const displayCoverUrl = computed(() => coverPreview.value ?? getCoursePublicUrl(
             </UPageCard>
 
             <UPageCard title="Deskripsi">
-              <div class="border border-muted rounded-lg overflow-hidden min-h-64">
-                <UEditor
-                  v-slot="{ editor }"
-                  v-model="description"
-                  content-type="json"
-                  placeholder="Deskripsi course..."
-                  class="min-h-60"
-                >
-                  <UEditorToolbar
-                    :editor="editor"
-                    :items="(toolbarItems as any)"
-                    class="border-b border-muted py-1.5 px-2 overflow-x-auto"
-                  />
-                  <UEditorSuggestionMenu :editor="editor" :items="suggestionItems" />
-                </UEditor>
-              </div>
+              <EditorRichEditor
+                v-model="description"
+                placeholder="Deskripsi course..."
+              />
             </UPageCard>
 
             <UPageCard title="Gambar Cover">

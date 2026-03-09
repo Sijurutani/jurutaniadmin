@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import type { FormSubmitEvent, EditorSuggestionMenuItem } from '@nuxt/ui'
-import { createImageUploadExtension } from '~/components/news/EditorImageUploadExtension'
+import type { FormSubmitEvent } from '@nuxt/ui'
 import type { Database } from '~/types/database.types'
 
 type NewsRow = Database['public']['Tables']['news_updated']['Row']
-type Category = Database['public']['Tables']['category_news']['Row']
 
 useHead({ title: 'Edit Berita – Jurutani Admin' })
 
@@ -55,7 +53,6 @@ const existingAttachments = ref<AttachmentItem[]>([])
 const newAttachmentFiles = ref<File[]>([])
 const newAttachmentInput = ref<File[]>([])
 
-const categories = ref<Category[]>([])
 const pending = ref(true)
 const saving = ref(false)
 const uploading = ref(false)
@@ -105,14 +102,14 @@ async function loadNews() {
 }
 
 // ─── Categories ───────────────────────────────────────────────────────────────
-async function fetchCategories() {
+const { data: categories } = await useAsyncData('news-categories', async () => {
   const { data } = await supabase
     .from('category_news')
     .select('*')
     .is('deleted_at', null)
     .order('name')
-  categories.value = data ?? []
-}
+  return data ?? []
+}, { default: () => [] })
 
 // ─── Cover image ─────────────────────────────────────────────────────────────
 const slugEdited = ref<boolean>(false)
@@ -235,75 +232,10 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 }
 
 const categoryItems = computed(() =>
-  categories.value.map(c => ({ label: c.name, value: c.value }))
+  (categories.value ?? []).map((c: { name: string, value: string }) => ({ label: c.name, value: c.value }))
 )
 
 const statusItems = Enum.StatusNews.map(s => ({ label: s.label, value: s.value }))
-
-// ─── Editor setup ─────────────────────────────────────────────────────────────
-const editorExtensions = [createImageUploadExtension(newsId)] as any[]
-
-const editorHandlers = {
-  imageUpload: {
-    canExecute: (editor: any) => editor.can().insertContent({ type: 'imageUpload' }),
-    execute: (editor: any) => editor.chain().focus().insertContent({ type: 'imageUpload' }),
-    isActive: (editor: any) => editor.isActive('imageUpload'),
-    isDisabled: undefined
-  }
-}
-
-const toolbarItems = [
-  [{ kind: 'imageUpload', icon: 'i-lucide-image', label: 'Upload Gambar', variant: 'soft' as const }],
-  [{
-    icon: 'i-lucide-heading',
-    content: { align: 'start' as const },
-    items: [
-      { kind: 'heading', level: 1, icon: 'i-lucide-heading-1', label: 'Heading 1' },
-      { kind: 'heading', level: 2, icon: 'i-lucide-heading-2', label: 'Heading 2' },
-      { kind: 'heading', level: 3, icon: 'i-lucide-heading-3', label: 'Heading 3' }
-    ]
-  }],
-  [
-    { kind: 'mark', mark: 'bold', icon: 'i-lucide-bold' },
-    { kind: 'mark', mark: 'italic', icon: 'i-lucide-italic' },
-    { kind: 'mark', mark: 'underline', icon: 'i-lucide-underline' },
-    { kind: 'mark', mark: 'strike', icon: 'i-lucide-strikethrough' },
-    { kind: 'mark', mark: 'code', icon: 'i-lucide-code' }
-  ],
-  [
-    { kind: 'bulletList', icon: 'i-lucide-list' },
-    { kind: 'orderedList', icon: 'i-lucide-list-ordered' },
-    { kind: 'blockquote', icon: 'i-lucide-quote' },
-    { kind: 'codeBlock', icon: 'i-lucide-square-code' },
-    { kind: 'horizontalRule', icon: 'i-lucide-separator-horizontal' }
-  ],
-  [{ kind: 'link', icon: 'i-lucide-link' }],
-  [
-    { kind: 'undo', icon: 'i-lucide-undo-2' },
-    { kind: 'redo', icon: 'i-lucide-redo-2' }
-  ]
-] as any[][]
-
-const suggestionItems: EditorSuggestionMenuItem[][] = [
-  [
-    { type: 'label', label: 'Teks' },
-    { kind: 'paragraph', label: 'Paragraf', icon: 'i-lucide-type' },
-    { kind: 'heading', level: 1, label: 'Heading 1', icon: 'i-lucide-heading-1' },
-    { kind: 'heading', level: 2, label: 'Heading 2', icon: 'i-lucide-heading-2' },
-    { kind: 'heading', level: 3, label: 'Heading 3', icon: 'i-lucide-heading-3' }
-  ],
-  [
-    { type: 'label', label: 'List' },
-    { kind: 'bulletList', label: 'Bullet List', icon: 'i-lucide-list' },
-    { kind: 'orderedList', label: 'Numbered List', icon: 'i-lucide-list-ordered' }
-  ],
-  [
-    { type: 'label', label: 'Insert' },
-    { kind: 'blockquote', label: 'Blockquote', icon: 'i-lucide-text-quote' },
-    { kind: 'codeBlock', label: 'Code Block', icon: 'i-lucide-square-code' },
-    { kind: 'horizontalRule', label: 'Divider', icon: 'i-lucide-separator-horizontal' }
-  ]
-]
 
 // Watch newGalleryInput to process newly selected files
 watch(newGalleryInput, (files) => {
@@ -320,7 +252,6 @@ watch(newAttachmentInput, (files) => {
 })
 
 onMounted(() => {
-  fetchCategories()
   loadNews()
 })
 </script>
@@ -421,24 +352,11 @@ onMounted(() => {
             </UPageCard>
 
             <UPageCard title="Konten">
-              <div class="border border-muted rounded-lg overflow-hidden min-h-96">
-                <UEditor
-                  v-slot="{ editor }"
-                  v-model="content"
-                  content-type="json"
-                  :extensions="editorExtensions"
-                  :handlers="(editorHandlers as any)"
-                  placeholder="Tulis konten artikel..."
-                  class="min-h-80"
-                >
-                  <UEditorToolbar
-                    :editor="editor"
-                    :items="(toolbarItems as any)"
-                    class="border-b border-muted py-1.5 px-2 overflow-x-auto"
-                  />
-                  <UEditorSuggestionMenu :editor="editor" :items="suggestionItems" />
-                </UEditor>
-              </div>
+              <EditorRichEditor
+                v-model="content"
+                :news-id="newsId"
+                placeholder="Tulis konten artikel..."
+              />
             </UPageCard>
           </div>
 

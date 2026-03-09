@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { format, isToday, isYesterday, isSameDay } from 'date-fns'
 import { id as idLocale } from 'date-fns/locale'
 import type { Database } from '~/types/database.types'
@@ -22,7 +22,7 @@ const supabase = useSupabaseClient()
 const auth = useAuth()
 const toast = useToast()
 
-// â”€â”€â”€ Messages â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Messages ─────────────────────────────────────────────────────────────────
 const messages = ref<MessageWithSender[]>([])
 const loadingMessages = ref(true)
 
@@ -38,13 +38,13 @@ async function fetchMessages() {
   loadingMessages.value = false
 }
 
-// â”€â”€â”€ Mark as read â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Mark as read ─────────────────────────────────────────────────────────────
 async function markRead() {
   await supabase.rpc('mark_conversation_messages_read', { conversation_id: props.conversationId })
   emit('refreshList')
 }
 
-// â”€â”€â”€ Realtime subscription â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Realtime subscription ────────────────────────────────────────────────────
 let channel: ReturnType<typeof supabase.channel> | null = null
 
 function subscribeRealtime() {
@@ -84,7 +84,7 @@ function subscribeRealtime() {
     .subscribe()
 }
 
-// â”€â”€â”€ Scroll logic â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Scroll logic ─────────────────────────────────────────────────────────────
 const scrollEl = ref<HTMLElement | null>(null)
 const isNearBottom = ref(true)
 const newMessageCount = ref(0)
@@ -103,7 +103,7 @@ function scrollToBottom(smooth = true) {
   })
 }
 
-// â”€â”€â”€ Send message â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Send message ─────────────────────────────────────────────────────────────
 const text = ref('')
 const sending = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -181,7 +181,7 @@ function onKeydown(e: KeyboardEvent) {
   }
 }
 
-// â”€â”€â”€ Date separator helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Date separator helpers ───────────────────────────────────────────────────
 function formatDateSeparator(d: Date) {
   if (isToday(d)) return 'Hari ini'
   if (isYesterday(d)) return 'Kemarin'
@@ -210,7 +210,7 @@ function formatFileSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-// ─── Edit message ─────────────────────────────────────────────────────────────
+// --- Edit message -------------------------------------------------------------
 const editingMsgId = ref<string | null>(null)
 const editText = ref('')
 const savingEdit = ref(false)
@@ -251,7 +251,7 @@ function onEditKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') cancelEdit()
 }
 
-// ─── Delete message / conversation ────────────────────────────────────────────
+// --- Delete message / conversation --------------------------------------------
 const hoveredMsgId = ref<string | null>(null)
 const deletingMsgId = ref<string | null>(null)
 const deleteAllOpen = ref(false)
@@ -299,7 +299,7 @@ async function deleteConversation() {
   deletingConv.value = false
 }
 
-// ─── Image preview ────────────────────────────────────────────────────────────
+// --- Image preview ------------------------------------------------------------
 const previewImageUrl = ref<string | null>(null)
 const previewOpen = ref(false)
 
@@ -308,7 +308,7 @@ function openImagePreview(url: string) {
   previewOpen.value = true
 }
 
-// ─── Navbar menu ──────────────────────────────────────────────────────────────
+// --- Navbar menu --------------------------------------------------------------
 const navMenuItems = [[
   {
     label: 'Hapus Semua Pesan',
@@ -337,7 +337,7 @@ onUnmounted(() => {
   pendingFiles.value.forEach(f => { if (f.preview) URL.revokeObjectURL(f.preview) })
 })
 
-// â”€â”€â”€ Profile slideover â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Profile slideover ────────────────────────────────────────────────────────
 const profileOpen = ref(false)
 const roleLabel: Record<string, { label: string, color: 'success' | 'warning' | 'neutral' | 'info' }> = {
   petani: { label: 'Petani', color: 'neutral' },

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod'
 import type { EmbedItem } from '~/utils/embed'
-import type { EditorSuggestionMenuItem } from '@nuxt/ui'
 
 const route = useRoute()
 const courseId = route.params.id as string
@@ -330,55 +329,6 @@ async function confirmDeleteLesson() {
   }
 }
 
-// ─── Editor ───────────────────────────────────────────────────────────────────
-const toolbarItems = [
-  [{
-    icon: 'i-lucide-heading',
-    content: { align: 'start' as const },
-    items: [
-      { kind: 'heading', level: 1, icon: 'i-lucide-heading-1', label: 'Heading 1' },
-      { kind: 'heading', level: 2, icon: 'i-lucide-heading-2', label: 'Heading 2' },
-      { kind: 'heading', level: 3, icon: 'i-lucide-heading-3', label: 'Heading 3' }
-    ]
-  }],
-  [
-    { kind: 'mark', mark: 'bold', icon: 'i-lucide-bold' },
-    { kind: 'mark', mark: 'italic', icon: 'i-lucide-italic' },
-    { kind: 'mark', mark: 'underline', icon: 'i-lucide-underline' },
-    { kind: 'mark', mark: 'strike', icon: 'i-lucide-strikethrough' }
-  ],
-  [
-    { kind: 'bulletList', icon: 'i-lucide-list' },
-    { kind: 'orderedList', icon: 'i-lucide-list-ordered' },
-    { kind: 'blockquote', icon: 'i-lucide-quote' },
-    { kind: 'horizontalRule', icon: 'i-lucide-separator-horizontal' }
-  ],
-  [
-    { kind: 'undo', icon: 'i-lucide-undo-2' },
-    { kind: 'redo', icon: 'i-lucide-redo-2' }
-  ]
-] as any[][]
-
-const suggestionItems: EditorSuggestionMenuItem[][] = [
-  [
-    { type: 'label', label: 'Teks' },
-    { kind: 'paragraph', label: 'Paragraf', icon: 'i-lucide-type' },
-    { kind: 'heading', level: 1, label: 'Heading 1', icon: 'i-lucide-heading-1' },
-    { kind: 'heading', level: 2, label: 'Heading 2', icon: 'i-lucide-heading-2' }
-  ],
-  [
-    { type: 'label', label: 'List' },
-    { kind: 'bulletList', label: 'Bullet List', icon: 'i-lucide-list' },
-    { kind: 'orderedList', label: 'Numbered List', icon: 'i-lucide-list-ordered' }
-  ],
-  [
-    { type: 'label', label: 'Insert' },
-    { kind: 'blockquote', label: 'Blockquote', icon: 'i-lucide-text-quote' },
-    { kind: 'codeBlock', label: 'Code Block', icon: 'i-lucide-square-code' },
-    { kind: 'horizontalRule', label: 'Divider', icon: 'i-lucide-separator-horizontal' }
-  ]
-]
-
 const statusItems = Enum.StatusLearning.map(s => ({ label: s.label, value: s.value }))
 const lessonEmbedPlatformOptions = Enum.LessonEmbedPlatforms.map(p => ({ label: p.label, value: p.value }))
 
@@ -482,7 +432,9 @@ function removeLessonEmbed(id: string) {
             class="flex-1 flex flex-col items-center justify-center gap-2 p-6 text-center"
           >
             <UIcon name="i-lucide-layers" class="size-8 text-muted" />
-            <p class="text-sm text-muted">Belum ada lesson.</p>
+            <p class="text-sm text-muted">
+              Belum ada lesson.
+            </p>
             <UButton size="xs" label="Tambah Lesson Pertama" @click="addLessonOpen = true" />
           </div>
 
@@ -513,8 +465,12 @@ function removeLessonEmbed(id: string) {
           <!-- Empty state -->
           <div v-if="!activeLesson && !loadingLesson" class="flex-1 flex flex-col items-center justify-center gap-3 text-center p-8">
             <UIcon name="i-lucide-mouse-pointer-click" class="size-10 text-muted" />
-            <p class="text-base font-medium text-highlighted">Pilih lesson untuk mengedit</p>
-            <p class="text-sm text-muted">Klik salah satu lesson di sebelah kiri, atau tambah lesson baru.</p>
+            <p class="text-base font-medium text-highlighted">
+              Pilih lesson untuk mengedit
+            </p>
+            <p class="text-sm text-muted">
+              Klik salah satu lesson di sebelah kiri, atau tambah lesson baru.
+            </p>
           </div>
 
           <!-- Loading skeleton -->
@@ -530,7 +486,9 @@ function removeLessonEmbed(id: string) {
             <!-- Header row -->
             <div class="flex items-center justify-between gap-3">
               <div class="flex items-center gap-2">
-                <h3 class="font-semibold text-highlighted truncate max-w-sm">{{ activeLesson.title }}</h3>
+                <h3 class="font-semibold text-highlighted truncate max-w-sm">
+                  {{ activeLesson.title }}
+                </h3>
                 <UBadge
                   v-if="unsavedChanges"
                   color="warning"
@@ -594,22 +552,10 @@ function removeLessonEmbed(id: string) {
 
             <!-- Content editor -->
             <UPageCard title="Konten Materi">
-              <div class="border border-muted rounded-lg overflow-hidden min-h-64">
-                <UEditor
-                  v-slot="{ editor }"
-                  v-model="lessonContent"
-                  content-type="json"
-                  placeholder="Tulis materi lesson di sini..."
-                  class="min-h-60"
-                >
-                  <UEditorToolbar
-                    :editor="editor"
-                    :items="(toolbarItems as any)"
-                    class="border-b border-muted py-1.5 px-2 overflow-x-auto"
-                  />
-                  <UEditorSuggestionMenu :editor="editor" :items="suggestionItems" />
-                </UEditor>
-              </div>
+              <EditorRichEditor
+                v-model="lessonContent"
+                placeholder="Tulis materi lesson di sini..."
+              />
             </UPageCard>
 
             <!-- Embeds -->
@@ -630,7 +576,9 @@ function removeLessonEmbed(id: string) {
                       <p class="text-xs font-medium text-highlighted">
                         {{ Enum.LessonEmbedPlatforms.find(p => p.value === embed.platform)?.label ?? embed.platform }}
                       </p>
-                      <p class="text-xs text-muted truncate">{{ embed.url }}</p>
+                      <p class="text-xs text-muted truncate">
+                        {{ embed.url }}
+                      </p>
                     </div>
                     <UButton
                       icon="i-lucide-trash-2"
@@ -662,7 +610,9 @@ function removeLessonEmbed(id: string) {
                       @click="addLessonEmbed"
                     />
                   </div>
-                  <p v-if="lessonEmbedError" class="text-xs text-error-500">{{ lessonEmbedError }}</p>
+                  <p v-if="lessonEmbedError" class="text-xs text-error-500">
+                    {{ lessonEmbedError }}
+                  </p>
                 </div>
               </div>
             </UPageCard>
@@ -710,8 +660,18 @@ function removeLessonEmbed(id: string) {
     </template>
     <template #footer>
       <div class="flex justify-end gap-2">
-        <UButton color="neutral" variant="outline" label="Batal" @click="addLessonOpen = false" />
-        <UButton label="Tambah" :loading="addingLesson" :disabled="!newLessonTitle.trim()" @click="addLesson" />
+        <UButton
+          color="neutral"
+          variant="outline"
+          label="Batal"
+          @click="addLessonOpen = false"
+        />
+        <UButton
+          label="Tambah"
+          :loading="addingLesson"
+          :disabled="!newLessonTitle.trim()"
+          @click="addLesson"
+        />
       </div>
     </template>
   </UModal>
@@ -725,8 +685,18 @@ function removeLessonEmbed(id: string) {
     </template>
     <template #footer>
       <div class="flex justify-end gap-2">
-        <UButton color="neutral" variant="outline" label="Batal" @click="deleteLessonOpen = false" />
-        <UButton color="error" label="Hapus" :loading="deletingLesson" @click="confirmDeleteLesson" />
+        <UButton
+          color="neutral"
+          variant="outline"
+          label="Batal"
+          @click="deleteLessonOpen = false"
+        />
+        <UButton
+          color="error"
+          label="Hapus"
+          :loading="deletingLesson"
+          @click="confirmDeleteLesson"
+        />
       </div>
     </template>
   </UModal>
