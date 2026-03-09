@@ -26,7 +26,9 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // Private keys are only available on the server
     supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY,
-    
+    groqApiKey: process.env.GROQ_API_KEY,
+    openrouterApiKey: process.env.OPENROUTER_API_KEY,
+
     // Public keys are exposed to the client
     public: {
       supabaseUrl: process.env.SUPABASE_URL,

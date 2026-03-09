@@ -4,6 +4,7 @@ defineOptions({ inheritAttrs: false })
 const route = useRoute()
 const toast = useToast()
 const { inboxUnread, newsPending, marketsPending, coursesPending, fmtBadge } = useSidebarBadges()
+const chatbot = useChatbot()
 
 const open = ref(false)
 
@@ -152,9 +153,21 @@ onMounted(async () => {
             variant="soft"
             label="Ask Now"
             class="w-min"
-            disabled
+            @click="chatbot.open()"
           />
         </UPageCard>
+
+        <!-- Collapsed: show just the bot icon -->
+        <UTooltip v-if="collapsed" text="Asisten AI" side="right">
+          <UButton
+            icon="i-lucide-bot"
+            color="primary"
+            variant="soft"
+            square
+            class="mx-auto"
+            @click="chatbot.open()"
+          />
+        </UTooltip>
       </template>
 
       <template #footer="{ collapsed }">
@@ -178,5 +191,6 @@ onMounted(async () => {
     <slot />
 
     <NotificationsSlideover />
+    <ChatbotPanel />
   </UDashboardGroup>
 </template>
