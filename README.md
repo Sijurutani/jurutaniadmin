@@ -1,45 +1,100 @@
 # Jurutani Admin Dashboard
 
-[![Nuxt UI](https://img.shields.io/badge/Made%20with-Nuxt%20UI-00DC82?logo=nuxt&labelColor=020420)](https://ui.nuxt.com)
+[![Nuxt UI](https://img.shields.io/badge/Nuxt%20UI-4.5.1-00DC82?logo=nuxt&labelColor=020420)](https://ui.nuxt.com)
+[![Nuxt](https://img.shields.io/badge/Nuxt-4.3.1-00DC82?logo=nuxt&labelColor=020420)](https://nuxt.com)
+[![Supabase](https://img.shields.io/badge/Supabase-Backend-3ECF8E?logo=supabase&labelColor=1C1C1C)](https://supabase.com)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?logo=typescript&labelColor=1C1C1C)](https://www.typescriptlang.org)
 
-Dashboard admin untuk platform Jurutani, dibangun dengan Nuxt 4, Nuxt UI 4, Supabase, dan dilengkapi dengan MCP Server untuk GitHub Copilot.
+Dashboard admin terpadu untuk platform **Jurutani** — sistem informasi pertanian yang menghubungkan petani, pakar, dan sumber daya pertanian Indonesia.
+
+![Jurutani Admin Dashboard](./public/dashboard.png)
+
+---
 
 ## 🚀 Tech Stack
 
-- **Nuxt 4** (v4.3.1) - Full-stack Vue framework
-- **Nuxt UI 4** (v4.5.1) - Component library berbasis Tailwind CSS v4
-- **Supabase** - Backend as a Service (Database, Auth, Storage)
-- **Zod** (v4.3.6) - TypeScript-first schema validation
-- **TypeScript** - Static type checking
-- **pnpm** - Package manager
+| Teknologi | Versi | Kegunaan |
+|---|---|---|
+| **Nuxt 4** | v4.3.1 | Full-stack Vue framework |
+| **Nuxt UI 4** | v4.5.1 | Component library (Tailwind CSS v4) |
+| **Supabase** | latest | Database, Auth, Storage |
+| **Zod** | v4.3.6 | Schema validation |
+| **TypeScript** | strict | Static type checking |
+| **pnpm** | latest | Package manager |
 
-## 📖 Documentation
+---
 
-- [MCP Setup Guide](./MCP_SETUP.md) - Setup MCP Server untuk GitHub Copilot
-- [Supabase Setup Guide](./SUPABASE_SETUP.md) - Setup Supabase database
-- [Copilot Instructions](./copilot-instructions.md) - Coding standards dan best practices
+## ✨ Fitur
 
-<a href="https://dashboard-template.nuxt.dev/" target="_blank">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://ui.nuxt.com/assets/templates/nuxt/dashboard-dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="https://ui.nuxt.com/assets/templates/nuxt/dashboard-light.png">
-    <img alt="Nuxt Dashboard Template" src="https://ui.nuxt.com/assets/templates/nuxt/dashboard-light.png">
-  </picture>
-</a>
+### 📊 Dashboard & Analitik
+- Statistik pengguna, konten, dan aktivitas platform
+- Grafik registrasi & distribusi role pengguna
 
-> The dashboard template for Vue is on https://github.com/nuxt-ui-templates/dashboard-vue.
+### 📰 Manajemen Konten
+- **Berita** — buat, edit, publish/reject berita dengan kategori
+- **Konten** — kelola banner dan carousel halaman utama
+- **Tags** — manajemen kategori untuk berita, pasar, dan pakar
 
-## Quick Start
+### 📚 Kursus (Learning)
+- Buat dan kelola kursus beserta lesson bertingkat
+- Editor konten rich-text (TipTap) dengan embed YouTube, Google Drive
+- Preview kursus: lesson, progres, komentar, rating bintang
+- Drag-and-drop reorder lesson
+- Publish workflow dengan status (pending → approved)
 
-```bash [Terminal]
-npm create nuxt@latest -- -t github:nuxt-ui-templates/dashboard
+### 🛒 Pasar
+- Manajemen produk marketplace pertanian
+- Review & moderasi listing produk
+
+### 👥 Manajemen Pengguna
+- Daftar pengguna dengan filter role
+- Manajemen pakar & instruktur
+- Dashboard statistik per pengguna
+
+### 📥 Inbox & Notifikasi
+- Pesan masuk dari pengguna
+- Badge unread real-time di sidebar
+
+### 📅 Meeting
+- Jadwal dan manajemen pertemuan virtual
+
+### 🗺️ Maps & Lokasi
+- Peta sebaran pengguna/lokasi
+
+### ⚙️ Pengaturan
+- Profil admin, anggota tim, notifikasi, keamanan
+
+### 🤖 AI Asisten
+- Chatbot AI terintegrasi (sidebar & floating panel)
+- Tanya seputar platform Jurutani
+
+### 🔐 Autentikasi
+- Sign in dengan email/password atau Google OAuth
+- Halaman login dengan animasi canvas dinamis + glassmorphism
+
+---
+
+## 📁 Struktur Project
+
+```
+app/
+├── components/       # Vue components (per fitur)
+├── composables/      # Reusable logic (useAuth, useChatbot, dll.)
+├── layouts/          # Nuxt layouts (default, auth, plain)
+├── pages/            # File-based routing
+├── stores/           # Pinia stores
+├── types/            # TypeScript types + Supabase generated types
+└── utils/            # Utility functions
+server/
+└── api/              # Server API routes
+supabase/
+└── migrations/       # Database migrations
+mcp-server/           # MCP Server untuk GitHub Copilot
 ```
 
-## Deploy your own
+---
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-name=dashboard&repository-url=https%3A%2F%2Fgithub.com%2Fnuxt-ui-templates%2Fdashboard&demo-image=https%3A%2F%2Fui.nuxt.com%2Fassets%2Ftemplates%2Fnuxt%2Fdashboard-dark.png&demo-url=https%3A%2F%2Fdashboard-template.nuxt.dev%2F&demo-title=Nuxt%20Dashboard%20Template&demo-description=A%20dashboard%20template%20with%20multi-column%20layout%20for%20building%20sophisticated%20admin%20interfaces.)
-
-## Setup
+## ⚡ Quick Start
 
 ### 1. Install Dependencies
 
@@ -49,12 +104,8 @@ pnpm install
 
 ### 2. Setup Environment Variables
 
-```bash
-cp .env.example .env
-# Edit .env dengan credentials Supabase Anda
-```
+Buat file `.env` di root project:
 
-Required variables:
 ```env
 SUPABASE_URL=your_supabase_url
 SUPABASE_KEY=your_supabase_anon_key
@@ -67,37 +118,55 @@ SUPABASE_SERVICE_KEY=your_supabase_service_key
 pnpm types:generate
 ```
 
-### 4. Setup MCP Server (Optional - untuk GitHub Copilot)
-
-```bash
-cd mcp-server
-pnpm install
-cd ..
-```
-
-Restart VS Code setelah setup MCP Server. Lihat [MCP_SETUP.md](./MCP_SETUP.md) untuk detail.
-
-## Development Server
-
-Start the development server on `http://localhost:3000`:
+### 4. Jalankan Dev Server
 
 ```bash
 pnpm dev
 ```
 
-## Production
+Buka `http://localhost:3000`
 
-Build the application for production:
+---
 
-```bash
-pnpm build
-```
-
-Locally preview production build:
+## 🛠️ Scripts
 
 ```bash
-pnpm preview
+pnpm dev              # Development server
+pnpm build            # Build production
+pnpm preview          # Preview production build
+pnpm lint             # ESLint
+pnpm typecheck        # TypeScript check
+pnpm types:generate   # Generate Supabase types
 ```
+
+---
+
+## 🤖 MCP Server (GitHub Copilot)
+
+Project ini dilengkapi MCP Server untuk meningkatkan pengalaman GitHub Copilot dengan konteks codebase Jurutani.
+
+```bash
+cd mcp-server
+pnpm install
+```
+
+Restart VS Code setelah setup. Lihat [MCP_SETUP.md](./MCP_SETUP.md) untuk detail lengkap.
+
+---
+
+## 📖 Dokumentasi
+
+- [MCP Setup Guide](./MCP_SETUP.md) — Setup MCP Server untuk GitHub Copilot
+- [Copilot Instructions](./copilot-instructions.md) — Coding standards & best practices
+
+---
+
+## 👨‍💻 Developer
+
+Dibuat dengan ❤️ oleh **Ilham Kurniawan**
+
+[![Portfolio](https://img.shields.io/badge/Portfolio-ilhamkrnwan.vercel.app-00DC82?logo=vercel&labelColor=1C1C1C)](https://ilhamkrnwan.vercel.app)
+[![GitHub](https://img.shields.io/badge/GitHub-ilhamkrnwan-181717?logo=github)](https://github.com/ilhamkrnwan)
 
 Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
 
