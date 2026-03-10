@@ -306,13 +306,12 @@ export const CHAT_TOOLS = [
   }
 ]
 
-// Subset of tools for providers that struggle with large tool counts (Groq, OpenRouter).
-// Groq's llama models can generate malformed XML calls with >15 tools;
-// keeping the most common 12 prevents tool_use_failed errors.
+// Minimal subset for providers that struggle with large tool payloads (Groq, OpenRouter).
+// Only the 6 most-used tools to keep the request small and avoid malformed function calls.
 const CORE_TOOL_NAMES = new Set([
-  'get_users_count', 'get_platform_overview', 'get_recent_users', 'get_user',
-  'get_daily_summary', 'get_pending_content', 'get_experts', 'get_instructors',
-  'get_food_prices', 'search_food', 'get_course_stats', 'get_unpublished_courses'
+  'get_users_count', 'get_platform_overview',
+  'get_daily_summary', 'get_pending_content',
+  'get_food_prices', 'get_experts'
 ])
 export const CORE_TOOLS = CHAT_TOOLS.filter(
   t => CORE_TOOL_NAMES.has((t as { type: string, function: { name: string } }).function.name)

@@ -13,6 +13,7 @@ export function buildSystemPrompt(adminName?: string): string {
 - **Pengelola**: Politeknik Pembangunan Pertanian (Polbangtan) Yogyakarta Magelang
 - **Kontak**: si.jurutani@gmail.com | +62 856-6900-0010
 - **Tagline**: Solusi Pertanian Digital
+- **Website**: https://www.jurutani.com
 
 ## Modul Dashboard Admin
 - **News** – Manajemen berita pertanian (approval, edit, publish)

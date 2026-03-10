@@ -39,8 +39,37 @@ async function fetchMessages() {
 }
 
 // ─── Mark as read ─────────────────────────────────────────────────────────────
+// Update pesan dari lawan bicara yang belum dibaca → is_read = true
 async function markRead() {
-  await supabase.rpc('mark_conversation_messages_read', { conversation_id: props.conversationId })
+  const unreadFromOther = messages.value.filter(
+    m => m.sender_id === props.otherUser.id && !m.is_read
+  )
+  if (!unreadFromOther.length) return
+
+  // Optimistic: langsung update UI sebelum request selesai
+  messages.value.forEach(m => {
+    if (m.sender_id === props.otherUser.id && !m.is_read) {
+      m.is_read = true
+    }
+  })
+
+  const { error } = await supabase
+    .from('messages')
+    .update({ is_read: true })
+    .eq('conversation_id', props.conversationId)
+    .eq('sender_id', props.otherUser.id)
+    .eq('is_read', false)
+
+  if (error) {
+    // Rollback optimistic update jika gagal
+    const failedIds = new Set(unreadFromOther.map(m => m.id))
+    messages.value.forEach(m => {
+      if (failedIds.has(m.id)) m.is_read = false
+    })
+    toast.add({ title: 'Gagal menandai pesan sebagai dibaca', description: error.message, color: 'error' })
+    return
+  }
+
   emit('refreshList')
 }
 

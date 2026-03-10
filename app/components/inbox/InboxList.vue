@@ -108,15 +108,19 @@ function convActions(conv: ConversationWithProfiles): DropdownMenuItem[][] {
         placeholder="Cari percakapan..."
         size="sm"
         class="w-full mb-2"
+        variant="none"
         :trailing-icon="search ? 'i-lucide-x' : undefined"
         @click:trailing="search = ''"
       />
-      <!-- Filter tabs -->
+    </div>
+    <!-- Search + Filter -->
+    <div class="px-3 pt-2.5 pb-0 border-b border-default shrink-0">
       <UTabs
         v-model="filterMode"
         :items="filterTabs"
         :content="false"
         size="sm"
+        variant="link"
         class="w-full"
         :ui="{ list: 'w-full', trigger: 'flex-1 justify-center' }"
       >
@@ -133,6 +137,7 @@ function convActions(conv: ConversationWithProfiles): DropdownMenuItem[][] {
           </span>
         </template>
       </UTabs>
+      
     </div>
 
     <!-- Loading -->

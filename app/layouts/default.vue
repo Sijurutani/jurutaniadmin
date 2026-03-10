@@ -52,13 +52,12 @@ const links = computed(() => [[
 ], [{
   label: 'Feedback',
   icon: 'i-lucide-message-circle',
-  to: 'https://github.com/nuxt-ui-templates/dashboard',
+  to: 'https://wa.me/6287761296676?text=I%20have%20feedback%20about%20the%20dashboard',
   target: '_blank'
 }, {
   label: 'Help & Support',
   icon: 'i-lucide-info',
-  to: 'https://github.com/nuxt-ui-templates/dashboard',
-  target: '_blank'
+  to: '/help'
 }]])
 
 const groups = computed(() => [{

@@ -18,7 +18,9 @@ function checkRateLimit(userId: string): boolean {
 }
 
 type Provider = 'gemini' | 'groq' | 'openrouter'
-const FALLBACK_CHAIN: Provider[] = ['gemini', 'groq', 'openrouter']
+// OpenRouter free tier is unreliable (third-party proxied models, frequent 429/402/404).
+// Excluded from auto-fallback — only used when explicitly selected by the user.
+const FALLBACK_CHAIN: Provider[] = ['gemini', 'groq']
 
 function isFallbackError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err)
@@ -32,6 +34,8 @@ function isFallbackError(err: unknown): boolean {
   if (msg.includes('not a valid model') || msg.includes('model_not_found') || msg.includes('does not exist')) return true
   // Provider overloaded or upstream 503 (e.g. OpenRouter "Provider returned error")
   if (msg.includes('503') || msg.includes('overloaded') || msg.includes('Provider returned error')) return true
+  // OpenRouter: free model requires data-policy opt-in in account settings
+  if (msg.includes('API error 404') || msg.includes('data policy') || msg.includes('No endpoints found')) return true
   return false
 }
 
@@ -139,7 +143,7 @@ export default defineEventHandler(async (event) => {
         break
       } catch (e: unknown) {
         if (isFallbackError(e)) {
-          console.warn(`[chatbot] ${prov} error (${e instanceof Error ? e.message.slice(0, 80) : 'unknown'}), switching to next provider...`)
+          console.warn(`[chatbot] all models for "${prov}" exhausted (${e instanceof Error ? e.message.slice(0, 80) : 'unknown'}), switching to next provider...`)
           lastError = e
           continue
         }
