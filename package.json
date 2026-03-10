@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "nuxt build",
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 nuxt build",
     "dev": "nuxt dev",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
@@ -40,6 +40,7 @@
     "@nuxt/eslint": "^1.15.2",
     "@nuxtjs/mdc": "^0.20.2",
     "@nuxtjs/supabase": "^2.0.4",
+    "cross-env": "^10.1.0",
     "eslint": "^10.0.2",
     "supabase": "^2.77.0",
     "typescript": "^5.9.3",
