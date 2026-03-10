@@ -16,10 +16,10 @@ const suggestions = [
     <button
       v-for="s in suggestions"
       :key="s.label"
-      class="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-full border border-gray-700 bg-gray-800/60 text-gray-300 hover:bg-gray-700 hover:border-gray-500 hover:text-white transition-all"
+      class="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-full border border-default bg-elevated text-default hover:bg-accented hover:border-accented hover:text-highlighted transition-all"
       @click="emit('select', s.label)"
     >
-      <UIcon :name="s.icon" class="size-3.5 text-gray-400" />
+      <UIcon :name="s.icon" class="size-3.5 text-muted" />
       {{ s.label }}
     </button>
   </div>

@@ -37,9 +37,9 @@ function handleCopy() {
     <!-- Bot avatar -->
     <div
       v-if="!isUser"
-      class="shrink-0 size-7 rounded-full bg-gray-700/80 flex items-center justify-center mt-1"
+      class="shrink-0 size-7 rounded-full bg-accented flex items-center justify-center mt-1"
     >
-      <UIcon name="i-lucide-bot" class="size-4 text-gray-400" />
+      <UIcon name="i-lucide-bot" class="size-4 text-muted" />
     </div>
 
     <div
@@ -61,8 +61,8 @@ function handleCopy() {
         v-else
         class="w-full text-sm leading-relaxed rounded-2xl rounded-bl-sm overflow-hidden border px-4 py-3 shadow-sm"
         :class="message.error
-          ? 'border-red-800/50 bg-red-900/10 text-red-400'
-          : 'border-gray-700/60 bg-gray-800/50 text-gray-200'"
+          ? 'border-red-500/40 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400'
+          : 'border-default bg-elevated text-default'"
       >
         <div class="prose prose-sm dark:prose-invert max-w-none">
           <MDC :value="message.content || ''" />
@@ -71,12 +71,12 @@ function handleCopy() {
 
       <!-- Meta Info (Time, Model badge, Copy) -->
       <div class="flex items-center gap-2 mt-0.5 px-1" :class="isUser ? 'justify-end' : 'justify-start w-full'">
-        <span class="text-[11px] text-gray-500">{{ time }}</span>
+        <span class="text-[11px] text-muted">{{ time }}</span>
 
         <!-- Model badge -->
         <span
           v-if="!isUser && modelLabel"
-          class="inline-flex items-center gap-1 text-[10px] text-gray-500 bg-gray-800/60 border border-gray-700/50 rounded px-1.5 py-0.5"
+          class="inline-flex items-center gap-1 text-[10px] text-muted bg-elevated border border-default rounded px-1.5 py-0.5"
         >
           <UIcon :name="modelLabel.icon" class="size-2.5" />
           {{ modelLabel.label }}
@@ -89,7 +89,7 @@ function handleCopy() {
             variant="ghost"
             size="xs"
             class="h-5 w-5 rounded transition-opacity"
-            :class="copied ? 'text-green-500' : 'text-gray-500 hover:text-gray-300'"
+            :class="copied ? 'text-green-500' : 'text-muted hover:text-highlighted'"
             @click="handleCopy"
           />
         </UTooltip>
