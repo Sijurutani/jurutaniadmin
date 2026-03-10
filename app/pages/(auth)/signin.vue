@@ -75,11 +75,18 @@ async function handleGoogleSignIn() {
     :loading="loading"
     title="Welcome Back!"
     description="Sign in to access the Jurutani Admin Dashboard."
-    icon="i-lucide-tractor"
     align="top"
     separator="or"
     @submit="onSubmit"
   >
+    <template #icon>
+      <img
+        src="/jurutani.png"
+        alt="Jurutani"
+        class="w-12 h-12 object-contain mx-auto block"
+      >
+    </template>
+
     <template #password-hint>
       <UButton
         variant="link"

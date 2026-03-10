@@ -66,6 +66,17 @@ const groups = computed(() => [{
   label: 'Go to',
   items: links.value.flat()
 }, {
+  id: 'ai',
+  label: 'AI Asisten',
+  items: [{
+    id: 'ask-ai',
+    label: 'Tanya AI',
+    icon: 'i-lucide-bot',
+    onSelect: () => {
+      chatbot.open()
+    }
+  }]
+}, {
   id: 'code',
   label: 'Code',
   items: [{
@@ -128,42 +139,44 @@ onMounted(async () => {
           popover
         />
 
-        <UNavigationMenu
-          :collapsed="collapsed"
-          :items="links[1]"
-          orientation="vertical"
-          tooltip
-          class="mt-auto"
-        />
-        <div class="grow" />
-        <UPageCard
-          v-if="!collapsed"
-          title="Ask AI"
-          description="Get instant answers and insights"
-          :ui="{ description: 'text-sm', container: 'lg:p-5' }"
-          spotlight
-        >
-          <UButton
-            icon="i-lucide-bot"
-            color="primary"
-            variant="soft"
-            label="Ask Now"
-            class="w-min"
-            @click="chatbot.open()"
+        <div class="mt-auto flex flex-col gap-4">
+          <UNavigationMenu
+            :collapsed="collapsed"
+            :items="links[1]"
+            orientation="vertical"
+            tooltip
           />
-        </UPageCard>
 
-        <!-- Collapsed: show just the bot icon -->
-        <UTooltip v-if="collapsed" text="Asisten AI" side="right">
-          <UButton
-            icon="i-lucide-bot"
-            color="primary"
-            variant="soft"
-            square
-            class="mx-auto"
-            @click="chatbot.open()"
-          />
-        </UTooltip>
+          <UPageCard
+            v-if="!collapsed"
+            title="Ask AI"
+            description="Get instant answers and insights"
+            :ui="{ description: 'text-sm', container: 'lg:p-5 pt-0' }"
+            spotlight
+          >
+            <UButton
+              icon="i-lucide-bot"
+              color="primary"
+              variant="soft"
+              label="Ask Now"
+              class="w-min"
+              @click="chatbot.open()"
+            />
+          </UPageCard>
+
+          <!-- Collapsed: show just the bot icon -->
+          <div v-if="collapsed" class="flex justify-center pb-2">
+            <UTooltip text="Asisten AI" side="right">
+              <UButton
+                icon="i-lucide-bot"
+                color="primary"
+                variant="soft"
+                square
+                @click="chatbot.open()"
+              />
+            </UTooltip>
+          </div>
+        </div>
       </template>
 
       <template #footer="{ collapsed }">

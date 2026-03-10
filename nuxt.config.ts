@@ -5,7 +5,8 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@vueuse/nuxt',
     '@pinia/nuxt',
-    '@nuxtjs/supabase'
+    '@nuxtjs/supabase',
+    '@nuxtjs/mdc'
   ],
 
   devtools: {
@@ -25,7 +26,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // Private keys are only available on the server
     groqApiKey: process.env.GROQ_API_KEY,
-    openrouterApiKey: process.env.OPENROUTER_API_KEY
+    openrouterApiKey: process.env.OPENROUTER_API_KEY,
+    geminiApiKey: process.env.GEMINI_API_KEY
   },
 
   routeRules: {

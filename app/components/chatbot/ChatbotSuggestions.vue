@@ -12,16 +12,15 @@ const suggestions = [
 </script>
 
 <template>
-  <div class="flex flex-wrap gap-2 px-3 pb-2">
-    <UButton
+  <div class="flex flex-wrap gap-2 px-2 pb-1 justify-center">
+    <button
       v-for="s in suggestions"
       :key="s.label"
-      :label="s.label"
-      :icon="s.icon"
-      size="xs"
-      color="neutral"
-      variant="outline"
+      class="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-full border border-gray-700 bg-gray-800/60 text-gray-300 hover:bg-gray-700 hover:border-gray-500 hover:text-white transition-all"
       @click="emit('select', s.label)"
-    />
+    >
+      <UIcon :name="s.icon" class="size-3.5 text-gray-400" />
+      {{ s.label }}
+    </button>
   </div>
 </template>

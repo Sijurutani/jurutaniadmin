@@ -38,6 +38,7 @@
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.15.2",
+    "@nuxtjs/mdc": "^0.20.2",
     "@nuxtjs/supabase": "^2.0.4",
     "eslint": "^10.0.2",
     "supabase": "^2.77.0",
