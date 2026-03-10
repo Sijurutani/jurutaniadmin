@@ -77,13 +77,19 @@ async function handleGoogleSignIn() {
     description="Sign in to access the Jurutani Admin Dashboard."
     align="top"
     separator="or"
+    :ui="{
+      root: 'bg-transparent shadow-none ring-0 rounded-none divide-white/10',
+      header: 'pt-8 px-8',
+      body: 'px-8 pb-12',
+      footer: 'pb-12 px-8'
+    }"
     @submit="onSubmit"
   >
     <template #icon>
       <img
         src="/jurutani.png"
         alt="Jurutani"
-        class="w-12 h-12 object-contain mx-auto block"
+        class="w-10 h-10 object-contain mx-auto block lg:hidden"
       >
     </template>
 
