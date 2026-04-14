@@ -144,3 +144,49 @@ export async function deleteCourseFile(urlOrPath: string): Promise<void> {
     : urlOrPath
   await supabase.storage.from(BUCKET_COURSES).remove([path])
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Food Prices Storage  (bucket: food-images)
+//   image -> [foodId]/filename
+// ─────────────────────────────────────────────────────────────────────────────
+
+const BUCKET_FOOD_PRICES = 'food-images'
+
+export async function uploadFoodPriceImage(foodId: string, file: File): Promise<string> {
+  const supabase = useSupabaseClient()
+  const ext = file.name.split('.').pop() ?? 'bin'
+  const safeName = file.name
+    .replace(/\.[^/.]+$/, '')
+    .replace(/[^a-zA-Z0-9-_]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .toLowerCase() || 'image'
+  const timestamp = Date.now()
+  const path = `${foodId}/${safeName}-${timestamp}.${ext}`
+
+  const { error } = await supabase.storage
+    .from(BUCKET_FOOD_PRICES)
+    .upload(path, file, { upsert: true, contentType: file.type })
+
+  if (error) throw new Error(error.message)
+
+  const { data } = supabase.storage.from(BUCKET_FOOD_PRICES).getPublicUrl(path)
+  return data.publicUrl
+}
+
+export function getFoodPriceImagePublicUrl(path: string | null): string | null {
+  if (!path) return null
+  if (path.startsWith('http')) return path
+  const supabase = useSupabaseClient()
+  const { data } = supabase.storage.from(BUCKET_FOOD_PRICES).getPublicUrl(path)
+  return data.publicUrl
+}
+
+export async function deleteFoodPriceImage(urlOrPath: string): Promise<void> {
+  const supabase = useSupabaseClient()
+  const storagePrefix = `/storage/v1/object/public/${BUCKET_FOOD_PRICES}/`
+  const path = urlOrPath.includes(storagePrefix)
+    ? urlOrPath.split(storagePrefix)[1]!
+    : urlOrPath
+  await supabase.storage.from(BUCKET_FOOD_PRICES).remove([path])
+}

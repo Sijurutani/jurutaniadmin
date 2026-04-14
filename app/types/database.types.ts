@@ -458,54 +458,6 @@ export type Database = {
           },
         ]
       }
-      courses: {
-        Row: {
-          archived_at: string | null
-          category: string | null
-          created_at: string
-          deleted_at: string | null
-          description: string | null
-          files: Json | null
-          id: string
-          image_url: string | null
-          link_drive: string | null
-          link_youtube: string | null
-          slug: string | null
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          archived_at?: string | null
-          category?: string | null
-          created_at?: string
-          deleted_at?: string | null
-          description?: string | null
-          files?: Json | null
-          id?: string
-          image_url?: string | null
-          link_drive?: string | null
-          link_youtube?: string | null
-          slug?: string | null
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          archived_at?: string | null
-          category?: string | null
-          created_at?: string
-          deleted_at?: string | null
-          description?: string | null
-          files?: Json | null
-          id?: string
-          image_url?: string | null
-          link_drive?: string | null
-          link_youtube?: string | null
-          slug?: string | null
-          title?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       device_tokens: {
         Row: {
           created_at: string | null
@@ -820,74 +772,6 @@ export type Database = {
           },
         ]
       }
-      markets: {
-        Row: {
-          archived_at: string | null
-          attachments: string | null
-          category: string
-          contact_seller: string | null
-          created_at: string
-          deleted_at: string | null
-          description: string
-          id: string
-          links: Json | null
-          name: string
-          price: number | null
-          price_range: string | null
-          seller: string
-          slug: string | null
-          status: string | null
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          archived_at?: string | null
-          attachments?: string | null
-          category: string
-          contact_seller?: string | null
-          created_at?: string
-          deleted_at?: string | null
-          description: string
-          id?: string
-          links?: Json | null
-          name: string
-          price?: number | null
-          price_range?: string | null
-          seller: string
-          slug?: string | null
-          status?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          archived_at?: string | null
-          attachments?: string | null
-          category?: string
-          contact_seller?: string | null
-          created_at?: string
-          deleted_at?: string | null
-          description?: string
-          id?: string
-          links?: Json | null
-          name?: string
-          price?: number | null
-          price_range?: string | null
-          seller?: string
-          slug?: string | null
-          status?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "markets_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       meeting_schedules: {
         Row: {
           archived_at: string | null
@@ -925,65 +809,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "meeting_schedules_author_id_fkey"
-            columns: ["author_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      meetings: {
-        Row: {
-          archived_at: string | null
-          attachments: Json | null
-          author_id: string | null
-          category: string
-          content: string
-          created_at: string
-          deleted_at: string | null
-          id: string
-          image_url: string | null
-          link: string | null
-          organization: string
-          slug: string | null
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          archived_at?: string | null
-          attachments?: Json | null
-          author_id?: string | null
-          category: string
-          content: string
-          created_at?: string
-          deleted_at?: string | null
-          id?: string
-          image_url?: string | null
-          link?: string | null
-          organization: string
-          slug?: string | null
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          archived_at?: string | null
-          attachments?: Json | null
-          author_id?: string | null
-          category?: string
-          content?: string
-          created_at?: string
-          deleted_at?: string | null
-          id?: string
-          image_url?: string | null
-          link?: string | null
-          organization?: string
-          slug?: string | null
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_profiles"
             columns: ["author_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -1033,68 +858,6 @@ export type Database = {
           {
             foreignKeyName: "messages_sender_id_fkey"
             columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      news: {
-        Row: {
-          attachment_url: string | null
-          category: string
-          content: string
-          created_at: string
-          deleted_at: string | null
-          id: string
-          image_url: string | null
-          link: string | null
-          published_at: string | null
-          slug: string | null
-          status_news: string
-          sub_title: string | null
-          title: string
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          attachment_url?: string | null
-          category: string
-          content: string
-          created_at?: string
-          deleted_at?: string | null
-          id?: string
-          image_url?: string | null
-          link?: string | null
-          published_at?: string | null
-          slug?: string | null
-          status_news?: string
-          sub_title?: string | null
-          title: string
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          attachment_url?: string | null
-          category?: string
-          content?: string
-          created_at?: string
-          deleted_at?: string | null
-          id?: string
-          image_url?: string | null
-          link?: string | null
-          published_at?: string | null
-          slug?: string | null
-          status_news?: string
-          sub_title?: string | null
-          title?: string
-          updated_at?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "news_user_id_fkey"
-            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1520,13 +1283,10 @@ export type Database = {
       }
       is_expert: { Args: never; Returns: boolean }
       is_instructor: { Args: never; Returns: boolean }
-      is_market_owner: { Args: { market_id: string }; Returns: boolean }
-      is_meeting_author: { Args: { meeting_id: string }; Returns: boolean }
       is_meeting_schedule_author: {
         Args: { schedule_id: string }
         Returns: boolean
       }
-      is_news_author: { Args: { news_id: string }; Returns: boolean }
       is_profile_owner: { Args: { profile_id: string }; Returns: boolean }
       list_foods: {
         Args: { p_category?: string }

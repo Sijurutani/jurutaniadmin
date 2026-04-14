@@ -5,9 +5,17 @@ import type { TableColumn } from '@nuxt/ui'
 import type { Database } from '~/types/database.types'
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row']
+type AuthInfo = {
+  display_name: string | null
+  email: string | null
+  email_confirmed: boolean
+  last_sign_in_at: string | null
+  banned_until: string | null
+}
 
 const UBadge = resolveComponent('UBadge')
 const UAvatar = resolveComponent('UAvatar')
+const NuxtLink = resolveComponent('NuxtLink')
 
 const supabase = useSupabaseClient()
 
@@ -21,17 +29,47 @@ const { data: recentUsers } = await useAsyncData('user-recent-list', async () =>
   return (data ?? []) as ProfileRow[]
 }, { default: () => [] as ProfileRow[] })
 
+const authMap = ref<Record<string, AuthInfo>>({})
+
+watch(recentUsers, async (val) => {
+  const ids = (val ?? []).map(u => u.id)
+  if (!ids.length) {
+    authMap.value = {}
+    return
+  }
+
+  try {
+    const result = await $fetch<Record<string, AuthInfo>>('/api/users/batch', {
+      method: 'POST',
+      body: { ids }
+    })
+    authMap.value = result
+  } catch {
+    authMap.value = {}
+  }
+}, { immediate: true })
+
+function displayName(u: ProfileRow): string {
+  const auth = authMap.value[u.id]
+  return auth?.display_name ?? u.full_name ?? u.username ?? auth?.email ?? '—'
+}
+
+function displayEmail(u: ProfileRow): string {
+  const auth = authMap.value[u.id]
+  return auth?.email ?? u.email ?? '—'
+}
+
 const columns: TableColumn<ProfileRow>[] = [
   {
     id: 'user',
     header: 'Pengguna',
     cell: ({ row }) => {
       const u = row.original
-      return h('div', { class: 'flex items-center gap-3' }, [
-        h(UAvatar, { src: u.avatar_url ?? undefined, alt: u.full_name ?? 'User', size: 'sm' }),
+      return h(NuxtLink, { to: `/users/${u.id}`, class: 'inline-flex items-center gap-3 group min-w-0' }, () => [
+        h(UAvatar, { src: u.avatar_url ?? undefined, alt: displayName(u), size: 'sm' }),
         h('div', { class: 'min-w-0' }, [
-          h('p', { class: 'font-medium text-highlighted truncate max-w-44' }, u.full_name ?? '-'),
-          h('p', { class: 'text-xs text-muted truncate max-w-44' }, u.email ?? u.username ?? u.id)
+          h('p', { class: 'font-medium text-primary group-hover:underline truncate max-w-44' }, displayName(u)),
+          h('p', { class: 'text-xs text-muted truncate max-w-44' }, displayEmail(u))
         ])
       ])
     }

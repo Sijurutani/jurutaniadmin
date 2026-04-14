@@ -9,6 +9,13 @@ type NewsRow = Database['public']['Tables']['news_updated']['Row'] & {
   author?: { id: string, full_name: string | null, username: string | null, avatar_url: string | null } | null
 }
 type Category = Database['public']['Tables']['category_news']['Row']
+type AuthInfo = {
+  display_name: string | null
+  email: string | null
+  email_confirmed: boolean
+  last_sign_in_at: string | null
+  banned_until: string | null
+}
 
 // Resolve components for h() usage
 const UBadge = resolveComponent('UBadge')
@@ -16,6 +23,7 @@ const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
 const UCheckbox = resolveComponent('UCheckbox')
 const UAvatar = resolveComponent('UAvatar')
+const NuxtLink = resolveComponent('NuxtLink')
 
 useHead({ title: 'News – Jurutani Admin' })
 
@@ -95,6 +103,26 @@ const { data: newsData, refresh, pending } = await useAsyncData('news-list', asy
   default: () => ({ data: [] as NewsRow[], count: 0 }),
   watch: [sortValue, page, limit]
 })
+
+const authMap = ref<Record<string, AuthInfo>>({})
+
+watch(newsData, async (val) => {
+  const ids = Array.from(new Set((val?.data ?? []).map(n => n.author?.id).filter(Boolean))) as string[]
+  if (!ids.length) {
+    authMap.value = {}
+    return
+  }
+
+  try {
+    const result = await $fetch<Record<string, AuthInfo>>('/api/users/batch', {
+      method: 'POST',
+      body: { ids }
+    })
+    authMap.value = result
+  } catch {
+    authMap.value = {}
+  }
+}, { immediate: true })
 
 watchDebounced([search, filterCategory, filterStatus], async () => {
   page.value = 1
@@ -327,9 +355,20 @@ const columns: TableColumn<NewsRow>[] = [
     cell: ({ row }) => {
       const au = row.original.author
       if (!au) return h('span', { class: 'text-muted text-sm' }, '-')
-      return h('div', { class: 'flex items-center gap-2' }, [
+      const auth = authMap.value[au.id]
+      const displayName = auth?.display_name ?? au.full_name ?? au.username ?? auth?.email ?? '-'
+      const email = auth?.email ?? ''
+      return h(NuxtLink, {
+        to: `/users/${au.id}`,
+        class: 'inline-flex items-center gap-2 group min-w-0'
+      }, () => [
         h(UAvatar, { src: au.avatar_url ?? undefined, alt: au.full_name ?? 'User', size: 'xs' }),
-        h('span', { class: 'text-sm truncate max-w-24' }, au.full_name ?? au.username ?? '-')
+        h('div', { class: 'min-w-0' }, [
+          h('p', { class: 'text-sm truncate max-w-24 text-primary group-hover:underline' }, displayName),
+          email
+            ? h('p', { class: 'text-xs truncate max-w-24 text-muted' }, email)
+            : null
+        ])
       ])
     }
   },

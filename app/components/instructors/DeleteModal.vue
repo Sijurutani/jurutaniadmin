@@ -7,7 +7,12 @@ type InstructorWithProfile = InstructorRow & {
   profile: Pick<ProfileRow, 'id' | 'full_name' | 'username' | 'email' | 'avatar_url' | 'role' | 'phone' | 'bio' | 'address' | 'birth_date' | 'website'> | null
 }
 
-const props = defineProps<{ targets: InstructorWithProfile[] }>()
+const props = withDefaults(defineProps<{
+  targets: InstructorWithProfile[]
+  mode?: 'soft' | 'hard'
+}>(), {
+  mode: 'soft'
+})
 
 const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{ deleted: [] }>()
@@ -18,6 +23,7 @@ const toast = useToast()
 const loading = ref(false)
 const hardDeleteConfirm = ref('')
 const deleteMode = ref<'soft' | 'hard'>('soft')
+const forcedHard = computed(() => props.mode === 'hard')
 
 const confirmText = computed(() =>
   props.targets.length === 1
@@ -26,15 +32,25 @@ const confirmText = computed(() =>
 )
 
 watch(open, (v) => {
-  if (!v) { hardDeleteConfirm.value = ''; deleteMode.value = 'soft' }
+  if (v) {
+    deleteMode.value = props.mode
+    return
+  }
+  hardDeleteConfirm.value = ''
+  deleteMode.value = 'soft'
+})
+
+watch(() => props.mode, (mode) => {
+  if (open.value) deleteMode.value = mode
 })
 
 async function onDelete() {
   if (!props.targets.length) return
   loading.value = true
   const ids = props.targets.map(t => t.id)
+  const activeMode: 'soft' | 'hard' = forcedHard.value ? 'hard' : deleteMode.value
   try {
-    if (deleteMode.value === 'hard') {
+    if (activeMode === 'hard') {
       const { error } = await supabase.from('instructors').delete().in('id', ids)
       if (error) throw error
       toast.add({ title: `${ids.length} penyuluh dihapus permanen`, color: 'success', duration: 2000 })
@@ -55,7 +71,9 @@ async function onDelete() {
 }
 
 const canConfirmHard = computed(() =>
-  deleteMode.value === 'soft' || hardDeleteConfirm.value === confirmText.value
+  (forcedHard.value || deleteMode.value === 'hard')
+    ? hardDeleteConfirm.value === confirmText.value
+    : true
 )
 </script>
 
@@ -79,7 +97,8 @@ const canConfirmHard = computed(() =>
           <button
             class="flex flex-col gap-1 p-3 rounded-lg border text-left transition-all"
             :class="deleteMode === 'soft' ? 'border-warning bg-warning/5 ring-1 ring-warning' : 'border-default hover:bg-elevated'"
-            @click="deleteMode = 'soft'"
+            :disabled="forcedHard"
+            @click="!forcedHard && (deleteMode = 'soft')"
           >
             <div class="flex items-center gap-2">
               <UIcon name="i-lucide-archive" class="size-4 text-warning" />
@@ -100,7 +119,7 @@ const canConfirmHard = computed(() =>
           </button>
         </div>
 
-        <div v-if="deleteMode === 'hard'" class="space-y-2 p-3 rounded-lg bg-error/5 border border-error/20">
+        <div v-if="deleteMode === 'hard' || forcedHard" class="space-y-2 p-3 rounded-lg bg-error/5 border border-error/20">
           <div class="flex items-start gap-2">
             <UIcon name="i-lucide-alert-triangle" class="size-4 text-error mt-0.5 shrink-0" />
             <p class="text-xs text-error leading-relaxed">
@@ -119,9 +138,9 @@ const canConfirmHard = computed(() =>
       <div class="flex justify-end gap-2">
         <UButton label="Batal" color="neutral" variant="subtle" @click="open = false" />
         <UButton
-          :label="deleteMode === 'hard' ? 'Hapus Permanen' : 'Hapus'"
-          :color="deleteMode === 'hard' ? 'error' : 'warning'"
-          :icon="deleteMode === 'hard' ? 'i-lucide-trash-2' : 'i-lucide-archive'"
+          :label="(deleteMode === 'hard' || forcedHard) ? 'Hapus Permanen' : 'Hapus'"
+          :color="(deleteMode === 'hard' || forcedHard) ? 'error' : 'warning'"
+          :icon="(deleteMode === 'hard' || forcedHard) ? 'i-lucide-trash-2' : 'i-lucide-archive'"
           :loading="loading"
           :disabled="!canConfirmHard"
           @click="onDelete"

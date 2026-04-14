@@ -7,14 +7,23 @@ import type { Database } from '~/types/database.types'
 
 type MarketRow = Database['public']['Tables']['product_markets']['Row'] & {
   owner?: { id: string, full_name: string | null, username: string | null, avatar_url: string | null } | null
+  owner_profile?: { id: string, full_name: string | null, username: string | null, email: string | null, avatar_url: string | null } | null
 }
 type CategoryMarket = Database['public']['Tables']['category_markets']['Row']
+type AuthInfo = {
+  display_name: string | null
+  email: string | null
+  email_confirmed: boolean
+  last_sign_in_at: string | null
+  banned_until: string | null
+}
 
 const UBadge = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
 const UCheckbox = resolveComponent('UCheckbox')
 const UAvatar = resolveComponent('UAvatar')
+const NuxtLink = resolveComponent('NuxtLink')
 
 useHead({ title: 'Markets – Jurutani Admin' })
 
@@ -62,7 +71,7 @@ const { data: categories } = await useAsyncData('market-categories', async () =>
 
 // Select reaktif — JOIN owner hanya saat kolom owner ditampilkan
 const selectString = computed(() => {
-  const base = 'id, name, excerpt, category, status, created_at, slug, seller, contact_seller, price, price_unit, price_range, thumbnail_url, images, attachments, published_at'
+  const base = 'id, user_id, name, excerpt, category, status, created_at, slug, seller, contact_seller, price, price_unit, price_range, thumbnail_url, images, attachments, published_at, owner_profile:profiles!product_markets_user_id_fkey(id, full_name, username, email, avatar_url)'
   const ownerJoin = columnVisibility.value.owner !== false
     ? ', owner:profiles(id, full_name, username, avatar_url)'
     : ''
@@ -95,6 +104,26 @@ const { data: marketData, refresh, pending } = await useAsyncData('market-list',
   default: () => ({ data: [] as MarketRow[], count: 0 }),
   watch: [sortValue, page, limit]
 })
+
+const authMap = ref<Record<string, AuthInfo>>({})
+
+watch(marketData, async (val) => {
+  const ids = Array.from(new Set((val?.data ?? []).map(m => m.owner?.id ?? m.owner_profile?.id ?? m.user_id).filter(Boolean))) as string[]
+  if (!ids.length) {
+    authMap.value = {}
+    return
+  }
+
+  try {
+    const result = await $fetch<Record<string, AuthInfo>>('/api/users/batch', {
+      method: 'POST',
+      body: { ids }
+    })
+    authMap.value = result
+  } catch {
+    authMap.value = {}
+  }
+}, { immediate: true })
 
 watchDebounced([search, filterCategory, filterStatus], async () => {
   page.value = 1
@@ -328,13 +357,34 @@ const columns: TableColumn<MarketRow>[] = [
   {
     accessorKey: 'seller',
     header: 'Penjual',
-    cell: ({ row }) =>
-      h('div', { class: 'min-w-0' }, [
-        h('p', { class: 'text-sm truncate max-w-32' }, row.original.seller),
-        row.original.contact_seller
-          ? h('p', { class: 'text-xs text-muted truncate' }, row.original.contact_seller)
-          : null
+    cell: ({ row }) => {
+      const owner = row.original.owner ?? row.original.owner_profile
+      const ownerId = owner?.id ?? row.original.user_id
+      const auth = ownerId ? authMap.value[ownerId] : undefined
+      const sellerName = row.original.seller?.trim()
+        ? row.original.seller
+        : auth?.display_name ?? owner?.full_name ?? owner?.email ?? auth?.email ?? '-'
+      const sellerContact = row.original.contact_seller?.trim()
+        ? row.original.contact_seller
+        : auth?.email ?? owner?.email ?? '-'
+      const content = h('div', { class: 'min-w-0' }, [
+        h('p', {
+          class: owner
+            ? 'text-sm truncate max-w-32 text-primary group-hover:underline'
+            : 'text-sm truncate max-w-32'
+        }, sellerName),
+        h('p', { class: 'text-xs text-muted truncate max-w-32' }, sellerContact)
       ])
+
+      if (ownerId) {
+        return h(NuxtLink, {
+          to: `/users/${ownerId}`,
+          class: 'inline-flex min-w-0 group'
+        }, () => content)
+      }
+
+      return content
+    }
   },
   {
     accessorKey: 'status',
@@ -364,11 +414,27 @@ const columns: TableColumn<MarketRow>[] = [
     id: 'owner',
     header: 'Pemilik',
     cell: ({ row }) => {
-      const ow = row.original.owner
-      if (!ow) return h('span', { class: 'text-muted text-sm' }, '-')
-      return h('div', { class: 'flex items-center gap-2' }, [
-        h(UAvatar, { src: ow.avatar_url ?? undefined, alt: ow.full_name ?? 'User', size: 'xs' }),
-        h('span', { class: 'text-sm truncate max-w-24' }, ow.full_name ?? ow.username ?? '-')
+      const ow = row.original.owner ?? row.original.owner_profile
+      const ownerId = ow?.id ?? row.original.user_id
+      const auth = ownerId ? authMap.value[ownerId] : undefined
+      const displayName = auth?.display_name ?? ow?.full_name ?? ow?.email ?? auth?.email ?? '-'
+      const email = auth?.email ?? ow?.email ?? ''
+
+      if (!ownerId) {
+        return h('span', { class: 'text-muted text-sm' }, displayName)
+      }
+
+      return h(NuxtLink, {
+        to: `/users/${ownerId}`,
+        class: 'inline-flex items-center gap-2 group min-w-0'
+      }, () => [
+        h(UAvatar, { src: ow?.avatar_url ?? undefined, alt: displayName, size: 'xs' }),
+        h('div', { class: 'min-w-0' }, [
+          h('p', { class: 'text-sm truncate max-w-24 text-primary group-hover:underline' }, displayName),
+          email
+            ? h('p', { class: 'text-xs truncate max-w-24 text-muted' }, email)
+            : null
+        ])
       ])
     }
   },

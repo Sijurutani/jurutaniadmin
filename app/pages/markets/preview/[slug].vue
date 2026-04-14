@@ -6,6 +6,13 @@ import type { Database } from '~/types/database.types'
 type MarketRow = Database['public']['Tables']['product_markets']['Row'] & {
   owner?: { id: string, full_name: string | null, username: string | null, avatar_url: string | null } | null
 }
+type AuthInfo = {
+  display_name: string | null
+  email: string | null
+  email_confirmed: boolean
+  last_sign_in_at: string | null
+  banned_until: string | null
+}
 type AttachmentItem = { url: string, name: string, type: string, size: number }
 type LinkItem = { label: string, url: string }
 
@@ -15,6 +22,7 @@ const toast = useToast()
 const slug = route.params.slug as string
 
 const market = ref<MarketRow | null>(null)
+const ownerAuth = ref<AuthInfo | null>(null)
 const pending = ref(true)
 const notFound = ref(false)
 
@@ -37,6 +45,22 @@ async function loadMarket() {
   }
 
   market.value = data as MarketRow
+
+  const ownerId = market.value.owner?.id ?? market.value.user_id
+  if (ownerId) {
+    try {
+      const map = await $fetch<Record<string, AuthInfo>>('/api/users/batch', {
+        method: 'POST',
+        body: { ids: [ownerId] }
+      })
+      ownerAuth.value = map[ownerId] ?? null
+    } catch {
+      ownerAuth.value = null
+    }
+  } else {
+    ownerAuth.value = null
+  }
+
   pending.value = false
 }
 
@@ -73,6 +97,22 @@ const attachments = computed(() =>
 const links = computed(() =>
   ((market.value?.links as LinkItem[] | null) ?? []).filter(l => l.label && l.url)
 )
+
+const ownerId = computed(() => market.value?.owner?.id ?? market.value?.user_id ?? null)
+
+const sellerDisplayName = computed(() => {
+  if (!market.value) return '-'
+  return market.value.seller?.trim()
+    ? market.value.seller
+    : ownerAuth.value?.display_name ?? market.value.owner?.full_name ?? ownerAuth.value?.email ?? '-'
+})
+
+const sellerEmail = computed(() => ownerAuth.value?.email ?? '')
+
+const sellerContactDisplay = computed(() => {
+  if (!market.value) return '-'
+  return market.value.contact_seller?.trim() || ownerAuth.value?.email || '-'
+})
 
 function fileIcon(type: string) {
   if (type.includes('pdf')) return 'i-lucide-file-text'
@@ -172,21 +212,32 @@ onMounted(loadMarket)
           <!-- Seller -->
           <div class="flex flex-col gap-0.5">
             <span class="text-xs text-muted uppercase tracking-wide font-medium">Penjual</span>
-            <div class="flex items-center gap-2">
+            <NuxtLink
+              v-if="ownerId"
+              :to="`/users/${ownerId}`"
+              class="inline-flex items-center gap-2 group min-w-0"
+            >
               <UAvatar
                 v-if="market.owner"
                 :src="market.owner.avatar_url ?? undefined"
-                :alt="market.seller"
+                :alt="sellerDisplayName"
                 size="xs"
               />
-              <span class="font-medium text-highlighted">{{ market.seller }}</span>
+              <div class="min-w-0">
+                <p class="font-medium text-primary group-hover:underline truncate">{{ sellerDisplayName }}</p>
+                <p v-if="sellerEmail" class="text-xs text-muted truncate">{{ sellerEmail }}</p>
+              </div>
+            </NuxtLink>
+            <div v-else class="flex items-center gap-2 min-w-0">
+              <p class="font-medium text-highlighted truncate">{{ sellerDisplayName }}</p>
+              <p v-if="sellerEmail" class="text-xs text-muted truncate">{{ sellerEmail }}</p>
             </div>
           </div>
 
           <!-- Contact -->
-          <div v-if="market.contact_seller" class="flex flex-col gap-0.5">
+          <div v-if="sellerContactDisplay" class="flex flex-col gap-0.5">
             <span class="text-xs text-muted uppercase tracking-wide font-medium">Kontak</span>
-            <span class="text-sm text-highlighted">{{ market.contact_seller }}</span>
+            <span class="text-sm text-highlighted">{{ sellerContactDisplay }}</span>
           </div>
         </div>
 

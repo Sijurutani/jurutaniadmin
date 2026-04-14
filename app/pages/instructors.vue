@@ -128,6 +128,7 @@ const detailOpen = ref(false)
 const editOpen = ref(false)
 const deleteOpen = ref(false)
 const bulkImportOpen = ref(false)
+const deleteMode = ref<'soft' | 'hard'>('soft')
 const selectedInstructor = ref<InstructorWithProfile | null>(null)
 const deleteTargets = ref<InstructorWithProfile[]>([])
 
@@ -142,8 +143,9 @@ function openEdit(instructor: InstructorWithProfile) {
   detailOpen.value = false
 }
 
-function openDelete(targets: InstructorWithProfile[]) {
+function openDelete(targets: InstructorWithProfile[], mode: 'soft' | 'hard' = 'soft') {
   deleteTargets.value = targets
+  deleteMode.value = mode
   deleteOpen.value = true
 }
 
@@ -201,7 +203,7 @@ function rowActions(item: InstructorWithProfile) {
   return isDeleted
     ? [[
         { label: 'Pulihkan', icon: 'i-lucide-undo-2', onSelect: () => restoreInstructor(item) },
-        { label: 'Hapus Permanen', icon: 'i-lucide-trash-2', color: 'error' as const, onSelect: () => openDelete([item]) }
+        { label: 'Hapus Permanen', icon: 'i-lucide-trash-2', color: 'error' as const, onSelect: () => openDelete([item], 'hard') }
       ]]
     : [
         [
@@ -245,7 +247,12 @@ const columns: TableColumn<InstructorWithProfile>[] = [
         h(UAvatar, { src: i.profile?.avatar_url ?? undefined, alt: name, size: 'sm' }),
         h('div', { class: 'min-w-0' }, [
           h('p', { class: 'font-medium text-highlighted truncate max-w-48' }, name),
-          h('p', { class: 'text-xs text-muted truncate max-w-48' }, email)
+          email
+            ? h('a', {
+                href: `mailto:${email}`,
+                class: 'text-xs text-primary hover:underline truncate max-w-48 block'
+              }, email)
+            : h('p', { class: 'text-xs text-muted truncate max-w-48' }, '—')
         ])
       ])
     }
@@ -548,6 +555,7 @@ const stats = computed(() => [
   <InstructorsDeleteModal
     v-model:open="deleteOpen"
     :targets="deleteTargets"
+    :mode="deleteMode"
     @deleted="clearSelection(); refreshAll()"
   />
 

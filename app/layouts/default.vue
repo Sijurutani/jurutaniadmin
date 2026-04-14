@@ -16,6 +16,7 @@ const links = computed(() => [[
   { label: 'Inbox', icon: 'i-lucide-inbox', to: '/inbox', badge: fmtBadge(inboxUnread.value) },
   { label: 'Resources', type: 'label' as const },
   { label: 'Videos', icon: 'i-lucide-video', to: '/videos' },
+  { label: 'Food Prices', icon: 'i-lucide-chart-bar', to: '/prices' },
   { label: 'Meeting', icon: 'i-lucide-calendar', to: '/meetings' },
   { label: 'Courses', icon: 'i-lucide-book-open', to: '/courses', badge: fmtBadge(coursesPending.value) },
   { label: 'Users Management', type: 'label' as const },

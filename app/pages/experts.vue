@@ -234,7 +234,12 @@ const columns: TableColumn<ExpertWithProfile>[] = [
         h(UAvatar, { src: e.profile?.avatar_url ?? undefined, alt: name, size: 'sm' }),
         h('div', { class: 'min-w-0' }, [
           h('p', { class: 'font-medium text-highlighted truncate max-w-48' }, name),
-          h('p', { class: 'text-xs text-muted truncate max-w-48' }, email)
+          email
+            ? h('a', {
+                href: `mailto:${email}`,
+                class: 'text-xs text-primary hover:underline truncate max-w-48 block'
+              }, email)
+            : h('p', { class: 'text-xs text-muted truncate max-w-48' }, '—')
         ])
       ])
     }

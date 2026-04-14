@@ -6,6 +6,13 @@ import type { Database } from '~/types/database.types'
 type NewsRow = Database['public']['Tables']['news_updated']['Row'] & {
   author?: { id: string, full_name: string | null, username: string | null, avatar_url: string | null } | null
 }
+type AuthInfo = {
+  display_name: string | null
+  email: string | null
+  email_confirmed: boolean
+  last_sign_in_at: string | null
+  banned_until: string | null
+}
 
 const route = useRoute()
 const supabase = useSupabaseClient()
@@ -13,6 +20,7 @@ const toast = useToast()
 const slug = route.params.slug as string
 
 const news = ref<NewsRow | null>(null)
+const authorAuth = ref<AuthInfo | null>(null)
 const pending = ref(true)
 const notFound = ref(false)
 
@@ -35,6 +43,22 @@ async function loadNews() {
   }
 
   news.value = data as NewsRow
+
+  const authorId = news.value.author?.id
+  if (authorId) {
+    try {
+      const map = await $fetch<Record<string, AuthInfo>>('/api/users/batch', {
+        method: 'POST',
+        body: { ids: [authorId] }
+      })
+      authorAuth.value = map[authorId] ?? null
+    } catch {
+      authorAuth.value = null
+    }
+  } else {
+    authorAuth.value = null
+  }
+
   pending.value = false
 }
 
@@ -48,6 +72,13 @@ const statusColor = computed((): 'neutral' | 'success' | 'warning' | 'error' => 
   }
   return map[statusInfo.value?.color ?? 'neutral'] ?? 'neutral'
 })
+
+const authorDisplayName = computed(() => {
+  const author = news.value?.author
+  return authorAuth.value?.display_name ?? author?.full_name ?? authorAuth.value?.email ?? 'Anonim'
+})
+
+const authorEmail = computed(() => authorAuth.value?.email ?? '')
 
 onMounted(loadNews)
 </script>
@@ -129,19 +160,24 @@ onMounted(loadNews)
         </p>
 
         <!-- Author -->
-        <div v-if="news.author" class="flex items-center gap-3 mb-6 pb-6 border-b border-default">
+        <NuxtLink
+          v-if="news.author"
+          :to="`/users/${news.author.id}`"
+          class="inline-flex items-center gap-3 mb-6 pb-6 border-b border-default group"
+        >
           <UAvatar
             :src="news.author.avatar_url ?? undefined"
-            :alt="news.author.full_name ?? 'Author'"
+            :alt="authorDisplayName"
             size="sm"
           />
           <div>
-            <p class="font-medium text-sm text-highlighted">
-              {{ news.author.full_name ?? news.author.username ?? 'Anonim' }}
+            <p class="font-medium text-sm text-primary group-hover:underline">
+              {{ authorDisplayName }}
             </p>
-            <p class="text-xs text-muted">Penulis</p>
+            <p v-if="authorEmail" class="text-xs text-muted">{{ authorEmail }}</p>
+            <p v-else class="text-xs text-muted">Penulis</p>
           </div>
-        </div>
+        </NuxtLink>
 
         <!-- Cover image -->
         <div
