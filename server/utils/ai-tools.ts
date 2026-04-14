@@ -1,4 +1,5 @@
 import { serverSupabaseServiceRole } from '#supabase/server'
+import { serverSupabaseUser } from '#supabase/server'
 import type { H3Event } from 'h3'
 
 export const CHAT_TOOLS = [
@@ -225,6 +226,140 @@ export const CHAT_TOOLS = [
   {
     type: 'function',
     function: {
+      name: 'manage_news',
+      description: 'Kelola data berita (news_updated) untuk aksi create, update, delete (soft delete), dan reject.',
+      parameters: {
+        type: 'object',
+        properties: {
+          action: {
+            type: 'string',
+            description: 'Aksi yang dijalankan: create | update | delete | reject'
+          },
+          id: {
+            type: 'string',
+            description: 'ID berita. Wajib untuk action update, delete, dan reject.'
+          },
+          title: {
+            type: 'string',
+            description: 'Judul berita. Wajib untuk create, opsional untuk update.'
+          },
+          category: {
+            type: 'string',
+            description: 'Kategori berita. Wajib untuk create, opsional untuk update.'
+          },
+          sub_title: {
+            type: 'string',
+            description: 'Sub judul berita (opsional).'
+          },
+          link: {
+            type: 'string',
+            description: 'Tautan referensi berita (opsional).'
+          },
+          cover_image: {
+            type: 'string',
+            description: 'URL cover image berita (opsional).'
+          },
+          content: {
+            type: 'object',
+            description: 'Konten berita berbentuk JSON (opsional).'
+          },
+          status_news: {
+            type: 'string',
+            description: 'Status berita untuk create/update (misal: pending/published/rejected/draft).'
+          },
+          reason: {
+            type: 'string',
+            description: 'Alasan reject. Wajib untuk action reject.'
+          }
+        },
+        required: ['action']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'manage_market',
+      description: 'Kelola data produk pasar (product_markets) untuk aksi create, update, delete (soft delete), dan reject.',
+      parameters: {
+        type: 'object',
+        properties: {
+          action: {
+            type: 'string',
+            description: 'Aksi yang dijalankan: create | update | delete | reject'
+          },
+          id: {
+            type: 'string',
+            description: 'ID produk market. Wajib untuk action update, delete, dan reject.'
+          },
+          name: {
+            type: 'string',
+            description: 'Nama produk. Wajib untuk create, opsional untuk update.'
+          },
+          category: {
+            type: 'string',
+            description: 'Kategori produk. Wajib untuk create, opsional untuk update.'
+          },
+          seller: {
+            type: 'string',
+            description: 'Nama penjual. Wajib untuk create, opsional untuk update.'
+          },
+          price: {
+            type: 'number',
+            description: 'Harga produk (opsional).'
+          },
+          price_range: {
+            type: 'string',
+            description: 'Rentang harga (opsional).'
+          },
+          price_unit: {
+            type: 'string',
+            description: 'Satuan harga (opsional).'
+          },
+          contact_seller: {
+            type: 'string',
+            description: 'Kontak penjual (opsional).'
+          },
+          excerpt: {
+            type: 'string',
+            description: 'Ringkasan produk (opsional).'
+          },
+          thumbnail_url: {
+            type: 'string',
+            description: 'URL thumbnail produk (opsional).'
+          },
+          content: {
+            type: 'object',
+            description: 'Konten produk berbentuk JSON (opsional).'
+          },
+          attachments: {
+            type: 'object',
+            description: 'Lampiran produk dalam bentuk JSON (opsional).'
+          },
+          images: {
+            type: 'object',
+            description: 'Daftar gambar produk dalam bentuk JSON (opsional).'
+          },
+          links: {
+            type: 'object',
+            description: 'Daftar tautan produk dalam bentuk JSON (opsional).'
+          },
+          status: {
+            type: 'string',
+            description: 'Status produk untuk create/update (misal: pending/published/rejected/draft).'
+          },
+          reason: {
+            type: 'string',
+            description: 'Alasan reject. Wajib untuk action reject.'
+          }
+        },
+        required: ['action']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
       name: 'get_expert_by_category',
       description: 'Dapatkan daftar pakar berdasarkan kategori keahlian tertentu.',
       parameters: {
@@ -311,14 +446,44 @@ export const CHAT_TOOLS = [
 const CORE_TOOL_NAMES = new Set([
   'get_users_count', 'get_platform_overview',
   'get_daily_summary', 'get_pending_content',
-  'get_food_prices', 'get_experts'
+  'get_food_prices', 'get_experts',
+  'manage_news', 'manage_market'
 ])
 export const CORE_TOOLS = CHAT_TOOLS.filter(
   t => CORE_TOOL_NAMES.has((t as { type: string, function: { name: string } }).function.name)
 )
 
+function safeParseArgs(args: string): Record<string, unknown> {
+  if (!args || !args.trim()) return {}
+  try {
+    return JSON.parse(args) as Record<string, unknown>
+  } catch {
+    return {}
+  }
+}
+
 export async function executeChatTool(event: H3Event, name: string, _args: string): Promise<unknown> {
   const supabase = serverSupabaseServiceRole(event)
+  const mutatingTools = new Set(['manage_news', 'manage_market'])
+
+  if (mutatingTools.has(name)) {
+    const currentUser = await serverSupabaseUser(event)
+    if (!currentUser) return { error: 'Unauthorized. Login diperlukan untuk aksi ini.' }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('is_admin, role')
+      .eq('id', currentUser.id)
+      .maybeSingle()
+
+    if (profileError) throw profileError
+
+    const role = String(profile?.role || '').toLowerCase()
+    const isAllowed = profile?.is_admin === true || role === 'admin' || role === 'superadmin' || role === 'editor'
+    if (!isAllowed) {
+      return { error: 'Aksi ini hanya diizinkan untuk admin/editor.' }
+    }
+  }
 
   switch (name) {
     case 'get_users_count': {
@@ -450,7 +615,7 @@ export async function executeChatTool(event: H3Event, name: string, _args: strin
         supabase.from('instructors').select('id', { count: 'exact', head: true }).is('deleted_at', null),
         supabase.from('learning_courses').select('id', { count: 'exact', head: true }).is('deleted_at', null).is('archived_at', null),
         supabase.from('course_lessons').select('id', { count: 'exact', head: true }).is('deleted_at', null),
-        supabase.from('meetings').select('id', { count: 'exact', head: true }).is('deleted_at', null).is('archived_at', null),
+        (supabase as never as { from: (table: string) => any }).from('meetings').select('id', { count: 'exact', head: true }).is('deleted_at', null).is('archived_at', null),
         supabase.from('videos').select('id', { count: 'exact', head: true }).is('deleted_at', null),
         supabase.from('product_markets').select('id', { count: 'exact', head: true }).is('deleted_at', null).is('archived_at', null),
         supabase.from('news_updated').select('id', { count: 'exact', head: true }).is('deleted_at', null)
@@ -575,7 +740,7 @@ export async function executeChatTool(event: H3Event, name: string, _args: strin
     }
 
     case 'get_meetings': {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as never as { from: (table: string) => any })
         .from('meetings')
         .select('id, title, organization, category, created_at')
         .is('deleted_at', null)
@@ -588,16 +753,17 @@ export async function executeChatTool(event: H3Event, name: string, _args: strin
 
     case 'get_meeting_stats': {
       const [meetingsRes, schedulesRes] = await Promise.all([
-        supabase.from('meetings').select('category').is('deleted_at', null).is('archived_at', null),
+        (supabase as never as { from: (table: string) => any }).from('meetings').select('category').is('deleted_at', null).is('archived_at', null),
         supabase.from('meeting_schedules').select('id', { count: 'exact', head: true }).is('deleted_at', null).is('archived_at', null)
       ])
       if (meetingsRes.error) throw meetingsRes.error
-      const byCategory = meetingsRes.data.reduce((acc: Record<string, number>, row) => {
-        acc[row.category] = (acc[row.category] || 0) + 1
+      const byCategory = (meetingsRes.data as Array<{ category: string | null }> ?? []).reduce((acc: Record<string, number>, row) => {
+        const category = row.category || 'uncategorized'
+        acc[category] = (acc[category] || 0) + 1
         return acc
       }, {})
       return {
-        total_meetings: meetingsRes.data.length,
+        total_meetings: (meetingsRes.data ?? []).length,
         by_category: byCategory,
         total_meeting_schedules: schedulesRes.count ?? 0
       }
@@ -709,6 +875,244 @@ export async function executeChatTool(event: H3Event, name: string, _args: strin
       return { total: data.length, by_status: byStatus, by_category: byCategory }
     }
 
+    case 'manage_news': {
+      const args = safeParseArgs(_args) as {
+        action?: string
+        id?: string
+        title?: string
+        category?: string
+        sub_title?: string
+        link?: string
+        cover_image?: string
+        content?: Record<string, unknown>
+        status_news?: string
+        reason?: string
+      }
+      const action = String(args.action || '').toLowerCase().trim()
+
+      if (!['create', 'update', 'delete', 'reject'].includes(action)) {
+        return { error: 'Action manage_news tidak valid. Gunakan: create, update, delete, reject.' }
+      }
+
+      if (action === 'create') {
+        const title = args.title?.trim()
+        const category = args.category?.trim()
+        if (!title || !category) {
+          return { error: 'Untuk create news, parameter title dan category wajib diisi.' }
+        }
+
+        const payload: Record<string, unknown> = {
+          title,
+          category,
+          status_news: args.status_news?.trim() || 'pending',
+          content: args.content ?? {}
+        }
+
+        if (args.sub_title !== undefined) payload.sub_title = args.sub_title
+        if (args.link !== undefined) payload.link = args.link
+        if (args.cover_image !== undefined) payload.cover_image = args.cover_image
+        if (payload.status_news === 'published') payload.published_at = new Date().toISOString()
+
+        const { data, error } = await supabase
+          .from('news_updated')
+          .insert(payload as never)
+          .select('id, title, category, status_news, created_at')
+          .single()
+        if (error) throw error
+        return { success: true, action, item: data }
+      }
+
+      const id = args.id?.trim()
+      if (!id) return { error: 'Parameter id wajib diisi untuk update, delete, atau reject news.' }
+
+      if (action === 'update') {
+        const payload: Record<string, unknown> = { updated_at: new Date().toISOString() }
+        if (args.title !== undefined) payload.title = args.title
+        if (args.category !== undefined) payload.category = args.category
+        if (args.sub_title !== undefined) payload.sub_title = args.sub_title
+        if (args.link !== undefined) payload.link = args.link
+        if (args.cover_image !== undefined) payload.cover_image = args.cover_image
+        if (args.content !== undefined) payload.content = args.content
+        if (args.status_news !== undefined) {
+          payload.status_news = args.status_news
+          payload.published_at = args.status_news === 'published' ? new Date().toISOString() : null
+        }
+
+        if (Object.keys(payload).length === 1) {
+          return { error: 'Tidak ada field yang diubah untuk update news.' }
+        }
+
+        const { data, error } = await supabase
+          .from('news_updated')
+          .update(payload as never)
+          .eq('id', id)
+          .is('deleted_at', null)
+          .select('id, title, category, status_news, updated_at')
+          .single()
+        if (error) throw error
+        return { success: true, action, item: data }
+      }
+
+      if (action === 'delete') {
+        const now = new Date().toISOString()
+        const { data, error } = await supabase
+          .from('news_updated')
+          .update({ deleted_at: now, updated_at: now })
+          .eq('id', id)
+          .is('deleted_at', null)
+          .select('id, title, status_news, deleted_at')
+          .single()
+        if (error) throw error
+        return { success: true, action, item: data }
+      }
+
+      const reason = args.reason?.trim()
+      if (!reason) return { error: 'Alasan reject wajib diisi pada action reject news.' }
+
+      const now = new Date().toISOString()
+      const { data, error } = await supabase
+        .from('news_updated')
+        .update({
+          status_news: 'rejected',
+          published_at: null,
+          updated_at: now
+        })
+        .eq('id', id)
+        .is('deleted_at', null)
+        .select('id, title, category, status_news, updated_at')
+        .single()
+      if (error) throw error
+      return { success: true, action, reason, item: data }
+    }
+
+    case 'manage_market': {
+      const args = safeParseArgs(_args) as {
+        action?: string
+        id?: string
+        name?: string
+        category?: string
+        seller?: string
+        price?: number
+        price_range?: string
+        price_unit?: string
+        contact_seller?: string
+        excerpt?: string
+        thumbnail_url?: string
+        content?: Record<string, unknown>
+        attachments?: Record<string, unknown>
+        images?: Record<string, unknown>
+        links?: Record<string, unknown>
+        status?: string
+        reason?: string
+      }
+      const action = String(args.action || '').toLowerCase().trim()
+
+      if (!['create', 'update', 'delete', 'reject'].includes(action)) {
+        return { error: 'Action manage_market tidak valid. Gunakan: create, update, delete, reject.' }
+      }
+
+      if (action === 'create') {
+        const nameValue = args.name?.trim()
+        const category = args.category?.trim()
+        const seller = args.seller?.trim()
+        if (!nameValue || !category || !seller) {
+          return { error: 'Untuk create market, parameter name, category, dan seller wajib diisi.' }
+        }
+
+        const payload: Record<string, unknown> = {
+          name: nameValue,
+          category,
+          seller,
+          status: args.status?.trim() || 'pending',
+          content: args.content ?? {},
+          attachments: args.attachments ?? [],
+          images: args.images ?? [],
+          links: args.links ?? []
+        }
+
+        if (args.price !== undefined) payload.price = args.price
+        if (args.price_range !== undefined) payload.price_range = args.price_range
+        if (args.price_unit !== undefined) payload.price_unit = args.price_unit
+        if (args.contact_seller !== undefined) payload.contact_seller = args.contact_seller
+        if (args.excerpt !== undefined) payload.excerpt = args.excerpt
+        if (args.thumbnail_url !== undefined) payload.thumbnail_url = args.thumbnail_url
+        if (payload.status === 'published') payload.published_at = new Date().toISOString()
+
+        const { data, error } = await supabase
+          .from('product_markets')
+          .insert(payload as never)
+          .select('id, name, category, seller, status, created_at')
+          .single()
+        if (error) throw error
+        return { success: true, action, item: data }
+      }
+
+      const id = args.id?.trim()
+      if (!id) return { error: 'Parameter id wajib diisi untuk update, delete, atau reject market.' }
+
+      if (action === 'update') {
+        const payload: Record<string, unknown> = { updated_at: new Date().toISOString() }
+        if (args.name !== undefined) payload.name = args.name
+        if (args.category !== undefined) payload.category = args.category
+        if (args.seller !== undefined) payload.seller = args.seller
+        if (args.price !== undefined) payload.price = args.price
+        if (args.price_range !== undefined) payload.price_range = args.price_range
+        if (args.price_unit !== undefined) payload.price_unit = args.price_unit
+        if (args.contact_seller !== undefined) payload.contact_seller = args.contact_seller
+        if (args.excerpt !== undefined) payload.excerpt = args.excerpt
+        if (args.thumbnail_url !== undefined) payload.thumbnail_url = args.thumbnail_url
+        if (args.content !== undefined) payload.content = args.content
+        if (args.attachments !== undefined) payload.attachments = args.attachments
+        if (args.images !== undefined) payload.images = args.images
+        if (args.links !== undefined) payload.links = args.links
+        if (args.status !== undefined) {
+          payload.status = args.status
+          payload.published_at = args.status === 'published' ? new Date().toISOString() : null
+        }
+
+        if (Object.keys(payload).length === 1) {
+          return { error: 'Tidak ada field yang diubah untuk update market.' }
+        }
+
+        const { data, error } = await supabase
+          .from('product_markets')
+          .update(payload as never)
+          .eq('id', id)
+          .is('deleted_at', null)
+          .select('id, name, category, seller, status, updated_at')
+          .single()
+        if (error) throw error
+        return { success: true, action, item: data }
+      }
+
+      if (action === 'delete') {
+        const now = new Date().toISOString()
+        const { data, error } = await supabase
+          .from('product_markets')
+          .update({ deleted_at: now, updated_at: now })
+          .eq('id', id)
+          .is('deleted_at', null)
+          .select('id, name, status, deleted_at')
+          .single()
+        if (error) throw error
+        return { success: true, action, item: data }
+      }
+
+      const reason = args.reason?.trim()
+      if (!reason) return { error: 'Alasan reject wajib diisi pada action reject market.' }
+
+      const now = new Date().toISOString()
+      const { data, error } = await supabase
+        .from('product_markets')
+        .update({ status: 'rejected', published_at: null, updated_at: now })
+        .eq('id', id)
+        .is('deleted_at', null)
+        .select('id, name, category, seller, status, updated_at')
+        .single()
+      if (error) throw error
+      return { success: true, action, reason, item: data }
+    }
+
     case 'get_expert_by_category': {
       const args = JSON.parse(_args || '{}') as { category?: string }
       const category = args.category?.trim() || ''
@@ -719,7 +1123,7 @@ export async function executeChatTool(event: H3Event, name: string, _args: strin
         .ilike('category', `%${category}%`)
         .is('deleted_at', null)
       if (error) throw error
-      return data.map((e: Record<string, unknown>) => {
+      return (data ?? []).map((e: Record<string, unknown>) => {
         const p = e.profiles as Record<string, string> | undefined
         return { name: p?.full_name, email: p?.email, category: e.category, note: e.note }
       })

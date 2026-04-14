@@ -1,6 +1,8 @@
 import { z } from 'zod'
 import { serverSupabaseUser } from '#supabase/server'
 import { CHAT_TOOLS, CORE_TOOLS, executeChatTool } from '../../utils/ai-tools'
+import { callAI } from '../../utils/ai'
+import { buildSystemPrompt } from '../../utils/system-prompt'
 
 // Simple in-memory rate limiting: 20 requests per user per minute
 const rateLimitStore = new Map<string, { count: number, resetAt: number }>()
@@ -121,7 +123,7 @@ export default defineEventHandler(async (event) => {
 
   // Explicit typing for messages to avoid TypeScript errors
   const fullMessages: import('../../utils/ai').AIMessage[] = [
-    { role: 'system', content: systemPrompt + '\nSebagai Asisten Jurutani, kamu bisa menggunakan tools untuk memanggil data profil, expert, instructor, dan harga pangan terkini dari Supabase DB!' },
+    { role: 'system', content: systemPrompt + '\nGunakan tools secara aman. Mutasi database hanya untuk News dan Markets sesuai kebijakan sistem.' },
     ...(messages as import('../../utils/ai').AIMessage[])
   ]
 

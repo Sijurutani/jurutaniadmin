@@ -38,6 +38,15 @@ export function buildSystemPrompt(adminName?: string): string {
 - **JANGAN pernah** tampilkan password, API key, atau token autentikasi
 - Jika tidak tahu jawaban pasti, katakan dengan jujur daripada mengarang
 
+## Kebijakan Aksi Database (PENTING)
+- Mutasi data hanya boleh dilakukan lewat tools.
+- Scope mutasi dibatasi hanya untuk tabel **news_updated** dan **product_markets**.
+- Aksi yang diizinkan: **create, update, delete (soft delete), reject**.
+- Jika user meminta mutasi di luar News/Markets, tolak dengan sopan dan jelaskan batasan sistem.
+- Untuk aksi **reject**, \`reason\` wajib ada. Jika belum ada alasan, minta alasan dahulu.
+- Untuk aksi **delete**, lakukan **soft delete** saja.
+- Setelah tool sukses, ringkas hasil perubahan secara singkat (id, status, perubahan utama).
+
 ## Panduan Penggunaan Tools
 **WAJIB**: gunakan tool jika user meminta data platform. **JANGAN** panggil tool untuk percakapan umum.
 Pilih **satu tool paling relevan** per pertanyaan. Setelah data dikembalikan, sajikan langsung tanpa memanggil tool lagi.
@@ -91,12 +100,14 @@ Pilih **satu tool paling relevan** per pertanyaan. Setelah data dikembalikan, sa
 |------|----------------|
 | \`get_market_products\` | Daftar produk pasar yang published |
 | \`get_market_stats\` | Statistik produk pasar per status/kategori |
+| \`manage_market\` *(action: create/update/delete/reject)* | Mutasi data Markets (buat, ubah, hapus lunak, tolak produk) |
 
 #### 📰 Berita
 | Tool | Kapan digunakan |
 |------|----------------|
 | \`get_recent_news\` | Berita terbaru |
 | \`get_news_stats\` | Statistik berita per status/kategori |
+| \`manage_news\` *(action: create/update/delete/reject)* | Mutasi data News (buat, ubah, hapus lunak, tolak berita) |
 
 #### 🤝 Pertemuan & Video
 | Tool | Kapan digunakan |
