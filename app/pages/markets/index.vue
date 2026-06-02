@@ -71,7 +71,7 @@ const { data: categories } = await useAsyncData('market-categories', async () =>
 
 // Select reaktif — JOIN owner hanya saat kolom owner ditampilkan
 const selectString = computed(() => {
-  const base = 'id, user_id, name, excerpt, category, status, created_at, slug, seller, contact_seller, price, price_unit, price_range, thumbnail_url, images, attachments, published_at, owner_profile:profiles!product_markets_user_id_fkey(id, full_name, username, email, avatar_url)'
+  const base = 'id, user_id, name, excerpt, category, status, created_at, slug, seller, contact_seller, price, price_unit, price_range, thumbnail_url, published_at, owner_profile:profiles!product_markets_user_id_fkey(id, full_name, username, email, avatar_url)'
   const ownerJoin = columnVisibility.value.owner !== false
     ? ', owner:profiles(id, full_name, username, avatar_url)'
     : ''
@@ -177,18 +177,26 @@ async function confirmPermanentDelete() {
   if (!rows.length) return
   deleteLoading.value = true
   try {
-    for (const row of rows) {
-      const paths: string[] = []
-      if (row.thumbnail_url) paths.push(row.thumbnail_url)
-      if (row.images) {
-        for (const p of (row.images as unknown as string[])) if (p) paths.push(p)
-      }
-      if (row.attachments) {
-        for (const att of (row.attachments as unknown as AttachmentItem[])) if (att?.url) paths.push(att.url)
-      }
-      await Promise.allSettled(paths.map(p => deleteMarketFile(p)))
-    }
     const ids = rows.map(r => r.id)
+    const { data: fullRows, error: fetchErr } = await supabase
+      .from('product_markets')
+      .select('id, thumbnail_url, images, attachments')
+      .in('id', ids)
+    if (fetchErr) throw fetchErr
+
+    if (fullRows) {
+      for (const row of fullRows) {
+        const paths: string[] = []
+        if (row.thumbnail_url) paths.push(row.thumbnail_url)
+        if (row.images) {
+          for (const p of (row.images as unknown as string[])) if (p) paths.push(p)
+        }
+        if (row.attachments) {
+          for (const att of (row.attachments as unknown as AttachmentItem[])) if (att?.url) paths.push(att.url)
+        }
+        await Promise.allSettled(paths.map(p => deleteMarketFile(p)))
+      }
+    }
     const { error } = await supabase.from('product_markets').delete().in('id', ids)
     if (error) throw error
     toast.add({ title: `${ids.length} produk dihapus permanen`, color: 'success' })
@@ -314,7 +322,7 @@ const columns: TableColumn<MarketRow>[] = [
     cell: ({ row }) =>
       h('div', { class: 'size-10 rounded-md overflow-hidden bg-muted flex items-center justify-center shrink-0' },
         row.original.thumbnail_url
-          ? h('img', { src: getMarketPublicUrl(row.original.thumbnail_url) ?? row.original.thumbnail_url, class: 'size-full object-cover' })
+          ? h('img', { src: getResizedUrl(getMarketPublicUrl(row.original.thumbnail_url) ?? row.original.thumbnail_url, { width: 80, height: 80 })!, class: 'size-full object-cover', loading: 'lazy', decoding: 'async' })
           : h('span', { class: 'i-lucide-shopping-bag text-muted w-5 h-5' })
       )
   },
@@ -428,7 +436,7 @@ const columns: TableColumn<MarketRow>[] = [
         to: `/users/${ownerId}`,
         class: 'inline-flex items-center gap-2 group min-w-0'
       }, () => [
-        h(UAvatar, { src: ow?.avatar_url ?? undefined, alt: displayName, size: 'xs' }),
+        h(UAvatar, { src: getResizedUrl(ow?.avatar_url, { width: 32, height: 32 }) ?? undefined, alt: displayName, size: 'xs' }),
         h('div', { class: 'min-w-0' }, [
           h('p', { class: 'text-sm truncate max-w-24 text-primary group-hover:underline' }, displayName),
           email

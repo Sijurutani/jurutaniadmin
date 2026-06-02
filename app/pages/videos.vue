@@ -45,7 +45,7 @@ const videoQuery = computed(() => {
   const dbField = field === 'name' ? 'title' : field
   let q = supabase
     .from('videos')
-    .select('*', { count: 'exact' })
+    .select('id, title, slug, description, category, link_yt, created_at, deleted_at', { count: 'exact' })
     .is('deleted_at', null)
     .order(dbField, { ascending: dir === 'asc' })
 
@@ -169,7 +169,7 @@ const columns: TableColumn<VideoRow>[] = [
         },
         [
           thumb
-            ? h('img', { src: thumb, class: 'w-full h-full object-cover group-hover:scale-105 transition-transform duration-200' })
+            ? h('img', { src: thumb, class: 'w-full h-full object-cover group-hover:scale-105 transition-transform duration-200', loading: 'lazy', decoding: 'async' })
             : h('span', { class: 'i-lucide-video text-muted w-5 h-5' }),
           h('div', { class: 'absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30' },
             h('span', { class: 'i-lucide-play-circle text-white w-8 h-8' })

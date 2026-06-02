@@ -231,7 +231,7 @@ const columns: TableColumn<ExpertWithProfile>[] = [
       const name = e.profile?.full_name ?? e.profile?.username ?? '—'
       const email = e.profile?.email ?? ''
       return h('div', { class: 'flex items-center gap-3' }, [
-        h(UAvatar, { src: e.profile?.avatar_url ?? undefined, alt: name, size: 'sm' }),
+        h(UAvatar, { src: getResizedUrl(e.profile?.avatar_url, { width: 40, height: 40 }) ?? undefined, alt: name, size: 'sm' }),
         h('div', { class: 'min-w-0' }, [
           h('p', { class: 'font-medium text-highlighted truncate max-w-48' }, name),
           email

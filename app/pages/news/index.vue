@@ -302,7 +302,7 @@ const columns: TableColumn<NewsRow>[] = [
     cell: ({ row }) =>
       h('div', { class: 'size-10 rounded-md overflow-hidden bg-muted flex items-center justify-center shrink-0' },
         row.original.cover_image
-          ? h('img', { src: getNewsPublicUrl(row.original.cover_image) ?? row.original.cover_image, class: 'size-full object-cover' })
+          ? h('img', { src: getResizedUrl(getNewsPublicUrl(row.original.cover_image) ?? row.original.cover_image, { width: 80, height: 80 })!, class: 'size-full object-cover', loading: 'lazy', decoding: 'async' })
           : h('span', { class: 'i-lucide-image text-muted w-5 h-5' })
       )
   },
@@ -362,7 +362,7 @@ const columns: TableColumn<NewsRow>[] = [
         to: `/users/${au.id}`,
         class: 'inline-flex items-center gap-2 group min-w-0'
       }, () => [
-        h(UAvatar, { src: au.avatar_url ?? undefined, alt: au.full_name ?? 'User', size: 'xs' }),
+        h(UAvatar, { src: getResizedUrl(au.avatar_url, { width: 32, height: 32 }) ?? undefined, alt: au.full_name ?? 'User', size: 'xs' }),
         h('div', { class: 'min-w-0' }, [
           h('p', { class: 'text-sm truncate max-w-24 text-primary group-hover:underline' }, displayName),
           email

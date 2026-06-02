@@ -54,13 +54,15 @@ const columns: TableColumn<MarketRow>[] = [
     accessorKey: 'name',
     header: 'Produk',
     cell: ({ row }) => {
-      const thumb = getThumb(row.original.thumbnail_url)
+      const thumb = getResizedUrl(getThumb(row.original.thumbnail_url), { width: 80, height: 80 })
       return h('div', { class: 'flex items-center gap-3' }, [
         thumb
           ? h('img', {
               src: thumb,
               alt: row.original.name,
-              class: 'size-10 rounded object-cover shrink-0 bg-muted'
+              class: 'size-10 rounded object-cover shrink-0 bg-muted',
+              loading: 'lazy',
+              decoding: 'async'
             })
           : h('div', { class: 'size-10 rounded bg-elevated flex items-center justify-center shrink-0' },
               h(resolveComponent('UIcon'), { name: 'i-lucide-shopping-basket', class: 'size-4 text-muted' })),

@@ -20,7 +20,7 @@ const { data: allDistricts, refresh: refreshData, pending: loading } = await use
   async () => {
     const { data, error } = await supabase
       .from('districts')
-      .select('*')
+      .select('id, name, province')
       .order('province')
       .order('name')
     if (error) throw error

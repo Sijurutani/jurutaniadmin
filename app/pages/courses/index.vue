@@ -214,7 +214,7 @@ const columns: TableColumn<CourseRow>[] = [
     cell: ({ row }) =>
       h('div', { class: 'size-10 rounded-md overflow-hidden bg-muted flex items-center justify-center shrink-0' },
         row.original.cover_image
-          ? h('img', { src: getCoursePublicUrl(row.original.cover_image) ?? row.original.cover_image, class: 'size-full object-cover' })
+          ? h('img', { src: getResizedUrl(getCoursePublicUrl(row.original.cover_image) ?? row.original.cover_image, { width: 80, height: 80 })!, class: 'size-full object-cover', loading: 'lazy', decoding: 'async' })
           : h(UIcon, { name: 'i-lucide-book-open', class: 'size-5 text-muted' })
       )
   },
@@ -272,7 +272,7 @@ const columns: TableColumn<CourseRow>[] = [
       const au = row.original.author
       if (!au) return h('span', { class: 'text-muted text-sm' }, '-')
       return h('div', { class: 'flex items-center gap-2' }, [
-        h(UAvatar, { src: au.avatar_url ?? undefined, alt: au.full_name ?? 'User', size: 'xs' }),
+        h(UAvatar, { src: getResizedUrl(au.avatar_url, { width: 32, height: 32 }) ?? undefined, alt: au.full_name ?? 'User', size: 'xs' }),
         h('span', { class: 'text-sm truncate max-w-24' }, au.full_name ?? au.username ?? '-')
       ])
     }

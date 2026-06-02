@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { z } from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
+import { compressImage, validateImage } from '~/utils/storage'
 import type { Database } from '~/types/database.types'
 
 type HeroRow = Database['public']['Tables']['hero_data']['Row']
@@ -36,11 +37,13 @@ function getUrl(path: string | null | undefined): string | null {
 }
 
 async function uploadImage(file: File): Promise<string> {
-  const ext = file.name.split('.').pop() ?? 'jpg'
+  validateImage(file)
+  const compressedFile = await compressImage(file, { maxWidth: 1920, maxHeight: 1080, quality: 0.85 })
+  const ext = compressedFile.name.split('.').pop() ?? 'webp'
   const path = `hero-${Date.now()}.${ext}`
   const { error } = await supabase.storage
     .from(BUCKET_HERO)
-    .upload(path, file, { upsert: true, contentType: file.type })
+    .upload(path, compressedFile, { upsert: true, contentType: compressedFile.type })
   if (error) throw new Error(error.message)
   return path
 }

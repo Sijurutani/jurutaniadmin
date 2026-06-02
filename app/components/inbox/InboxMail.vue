@@ -2,6 +2,7 @@
 import { format, isToday, isYesterday, isSameDay } from 'date-fns'
 import { id as idLocale } from 'date-fns/locale'
 import type { Database } from '~/types/database.types'
+import { compressImage, validateImage, validateAttachment } from '~/utils/storage'
 
 type Profile = Pick<Database['public']['Tables']['profiles']['Row'], 'id' | 'full_name' | 'username' | 'avatar_url' | 'role'>
 type MessageRow = Database['public']['Tables']['messages']['Row']
@@ -158,11 +159,18 @@ function removePendingFile(idx: number) {
 }
 
 async function uploadFile(file: File): Promise<string> {
-  const ext = file.name.split('.').pop() ?? 'bin'
+  let fileToUpload = file
+  if (isImageFile(file)) {
+    validateImage(file)
+    fileToUpload = await compressImage(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.85 })
+  } else {
+    validateAttachment(file)
+  }
+  const ext = fileToUpload.name.split('.').pop() ?? 'bin'
   const path = `${props.conversationId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
   const { error } = await supabase.storage
     .from('chat-images')
-    .upload(path, file, { upsert: false, contentType: file.type })
+    .upload(path, fileToUpload, { upsert: false, contentType: fileToUpload.type })
   if (error) throw new Error(error.message)
   const { data } = supabase.storage.from('chat-images').getPublicUrl(path)
   return data.publicUrl

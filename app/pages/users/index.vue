@@ -229,7 +229,7 @@ const columns: TableColumn<ProfileRow>[] = [
       const displayName = auth?.display_name ?? u.full_name ?? u.username ?? '�'
       const email = auth?.email ?? u.email ?? ''
       return h('div', { class: 'flex items-center gap-3' }, [
-        h(UAvatar, { src: u.avatar_url ?? undefined, alt: displayName, size: 'sm' }),
+        h(UAvatar, { src: getResizedUrl(u.avatar_url, { width: 40, height: 40 }) ?? undefined, alt: displayName, size: 'sm' }),
         h('div', { class: 'min-w-0' }, [
           h('p', { class: 'font-medium text-highlighted truncate max-w-48' }, displayName),
           h('p', { class: 'text-xs text-muted truncate max-w-48' }, email)

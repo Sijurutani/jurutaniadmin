@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
+import { compressImage, validateImage } from '~/utils/storage'
 
 const auth = useAuth()
 const supabase = useSupabaseClient()
@@ -82,12 +83,15 @@ async function onFileChange(e: Event) {
   uploading.value = true
   try {
     const file = input.files[0]!
-    const ext = file.name.split('.').pop() ?? 'jpg'
+    validateImage(file, 2 * 1024 * 1024)
+    const compressedFile = await compressImage(file, { maxWidth: 400, maxHeight: 400, quality: 0.85 })
+
+    const ext = compressedFile.name.split('.').pop() ?? 'webp'
     const path = `${auth.profile.id}/avatar.${ext}`
 
     const { error } = await supabase.storage
       .from('avatars')
-      .upload(path, file, { upsert: true, contentType: file.type })
+      .upload(path, compressedFile, { upsert: true, contentType: compressedFile.type })
 
     if (error) throw error
 

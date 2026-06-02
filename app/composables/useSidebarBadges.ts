@@ -1,4 +1,4 @@
-import { createSharedComposable } from '@vueuse/core'
+import { createSharedComposable, useDebounceFn } from '@vueuse/core'
 
 const _useSidebarBadges = () => {
   const supabase = useSupabaseClient()
@@ -21,15 +21,17 @@ const _useSidebarBadges = () => {
     coursesPending.value = courses.count ?? 0
   }
 
+  const debouncedFetchAll = useDebounceFn(fetchAll, 2000)
+
   onMounted(() => {
     fetchAll()
 
     const channel = supabase
       .channel('sidebar-badges')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, fetchAll)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'news_updated' }, fetchAll)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'product_markets' }, fetchAll)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'learning_courses' }, fetchAll)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, debouncedFetchAll)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'news_updated' }, debouncedFetchAll)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'product_markets' }, debouncedFetchAll)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'learning_courses' }, debouncedFetchAll)
       .subscribe()
 
     onUnmounted(() => supabase.removeChannel(channel))

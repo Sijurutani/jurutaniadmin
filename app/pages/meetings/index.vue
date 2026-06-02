@@ -246,7 +246,7 @@ const columns: TableColumn<MeetingRow>[] = [
       const au = row.original.author
       if (!au) return h('span', { class: 'text-muted text-sm' }, '-')
       return h('div', { class: 'flex items-center gap-2' }, [
-        h(UAvatar, { src: au.avatar_url ?? undefined, alt: au.full_name ?? 'User', size: 'xs' }),
+        h(UAvatar, { src: getResizedUrl(au.avatar_url, { width: 32, height: 32 }) ?? undefined, alt: au.full_name ?? 'User', size: 'xs' }),
         h('span', { class: 'text-sm truncate max-w-24' }, au.full_name ?? au.username ?? '-')
       ])
     }
